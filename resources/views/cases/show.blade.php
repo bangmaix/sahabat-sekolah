@@ -90,22 +90,33 @@
             @if (session('user_role') === 'COUNSELOR')
                 <form class="participant-form" method="POST" action="{{ route('cases.participants', $case->case_number) }}">
                     @csrf
-                    <select name="participant_type">
-                        <option value="VICTIM">Korban</option>
-                        <option value="REPORTER">Pelapor</option>
-                        <option value="WITNESS">Saksi</option>
-                        <option value="ALLEGED_PERPETRATOR">Terduga pelaku</option>
-                        <option value="OTHER">Lainnya</option>
-                    </select>
-                    <input name="display_name" required placeholder="Nama pihak terkait">
-                    <select name="identity_visibility">
-                        <option value="CASE_RESTRICTED">Terbatas</option>
-                        <option value="CASE_FULL">Penuh</option>
-                        <option value="CASE_SENSITIVE">Sangat sensitif</option>
-                    </select>
-                    <button class="secondary-button" type="submit">
-                        <i data-lucide="user-plus"></i> Tambah pihak
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Peran</label>
+                        <select name="participant_type">
+                            <option value="VICTIM">Korban</option>
+                            <option value="REPORTER">Pelapor</option>
+                            <option value="WITNESS">Saksi</option>
+                            <option value="ALLEGED_PERPETRATOR">Terduga pelaku</option>
+                            <option value="OTHER">Lainnya</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Nama Pihak Terkait</label>
+                        <input name="display_name" required placeholder="Nama lengkap">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Visibilitas Identitas</label>
+                        <select name="identity_visibility">
+                            <option value="CASE_RESTRICTED">Terbatas</option>
+                            <option value="CASE_FULL">Penuh</option>
+                            <option value="CASE_SENSITIVE">Sangat sensitif</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button class="secondary-button" type="submit" style="width: 100%;">
+                            <i data-lucide="user-plus"></i> Tambah pihak
+                        </button>
+                    </div>
                 </form>
             @endif
         </div>
