@@ -36,7 +36,9 @@ class ReportController extends Controller
             ->select('cases.*', 'reports.description', 'reports.reporter_role', 'reports.identity_mode', 'case_slas.status as sla_status', 'case_slas.resolution_status');
 
         if ($status = $request->input('status')) {
-            $query->where('cases.status', $status);
+            if ($status !== 'ALL') {
+                $query->where('cases.status', $status);
+            }
         } else {
             $query->where('cases.status', '!=', 'CLOSED');
         }

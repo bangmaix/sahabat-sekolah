@@ -105,7 +105,26 @@
                         <input name="display_name" required placeholder="Nama lengkap">
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Visibilitas Identitas</label>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label style="font-size: 10px; color: #64748b; font-weight: 500;">Visibilitas Identitas</label>
+                            <style>
+                                .visibility-popover summary::-webkit-details-marker { display: none; }
+                                .visibility-popover[open] summary i { color: #2563eb; }
+                            </style>
+                            <details class="visibility-popover" style="position: relative; display: inline-block;">
+                                <summary style="list-style: none; cursor: pointer; display: flex; align-items: center; color: #94a3b8; outline: none;" title="Info Visibilitas">
+                                    <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                                </summary>
+                                <div style="position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 50; width: 280px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 11px; color: #475569; line-height: 1.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); cursor: default; font-weight: normal; text-transform: none;">
+                                    <strong style="display: block; margin-bottom: 6px; color: #1e293b; font-size: 12px;">Tingkat Visibilitas</strong>
+                                    <ul style="margin: 0; padding-left: 18px; display: grid; gap: 4px;">
+                                        <li><b>Terbatas:</b> Identitas disamarkan bagi pihak di luar penanganan utama.</li>
+                                        <li><b>Penuh:</b> Identitas terlihat di seluruh dokumen dan pihak terkait.</li>
+                                        <li><b>Sangat sensitif:</b> Hanya dapat dilihat oleh Kepala Sekolah dan Guru BK yang menangani.</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        </div>
                         <select name="identity_visibility">
                             <option value="CASE_RESTRICTED">Terbatas</option>
                             <option value="CASE_FULL">Penuh</option>
@@ -352,17 +371,17 @@
                     <button class="primary-button" type="submit"><i data-lucide="message-circle"></i> Beri respons awal</button>
                 </form>
             @elseif ($case->status === 'UNDER_VERIFICATION')
-                <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
+                <form method="POST" action="{{ route('cases.status', $case->case_number) }}" style="display: flex; flex-direction: column; gap: 12px;">
                     @csrf
-                    <input type="hidden" name="status" value="IN_HANDLING">
-                    <textarea name="reason" rows="2" placeholder="Catatan hasil verifikasi (opsional)"></textarea>
-                    <button class="primary-button" type="submit"><i data-lucide="clipboard-check"></i> Mulai penanganan</button>
-                </form>
-                <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
-                    @csrf
-                    <input type="hidden" name="status" value="RESOLVED">
-                    <textarea name="reason" rows="2" placeholder="Alasan penyelesaian"></textarea>
-                    <button class="secondary-button" type="submit"><i data-lucide="circle-check"></i> Tandai selesai</button>
+                    <div>
+                        <select name="status" required>
+                            <option value="">Pilih tindakan selanjutnya...</option>
+                            <option value="IN_HANDLING">Mulai penanganan</option>
+                            <option value="RESOLVED">Tandai selesai</option>
+                        </select>
+                    </div>
+                    <textarea name="reason" rows="2" placeholder="Catatan atau alasan (opsional)..."></textarea>
+                    <button class="primary-button" type="submit"><i data-lucide="arrow-right-circle"></i> Perbarui status</button>
                 </form>
             @elseif ($case->status === 'IN_HANDLING')
                 <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
@@ -372,10 +391,21 @@
                     <button class="primary-button" type="submit"><i data-lucide="circle-check"></i> Tandai selesai</button>
                 </form>
             @elseif ($case->status === 'RESOLVED')
+                @php
+                    $hasResolutionDoc = $resolutionDocuments->where('verification_status', 'VALID')->count() > 0;
+                @endphp
                 <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
                     @csrf
                     <input type="hidden" name="status" value="CLOSED">
-                    <button class="primary-button" type="submit"><i data-lucide="lock"></i> Tutup kasus</button>
+                    @if (!$hasResolutionDoc)
+                        <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: #991b1b; line-height: 1.4;">
+                            <i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: text-bottom; margin-right: 4px;"></i>
+                            Anda wajib mengunggah dokumen penyelesaian terlebih dahulu.
+                        </div>
+                    @endif
+                    <button class="primary-button" type="submit" @disabled(!$hasResolutionDoc) style="{{ !$hasResolutionDoc ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
+                        <i data-lucide="lock"></i> Tutup kasus
+                    </button>
                 </form>
             @else
                 <div class="done-state">

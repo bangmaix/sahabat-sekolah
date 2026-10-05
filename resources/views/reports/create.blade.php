@@ -56,7 +56,7 @@
 
                 <label>Sekolah <span>*</span>
                     <div class="tw-select-container relative w-full mt-1" data-name="school_npsn">
-                        <select name="school_npsn" class="hidden" required>
+                        <select name="school_npsn" style="opacity: 0; position: absolute; z-index: -1;" required>
                             <option value="">Pilih sekolah</option>
                             @foreach ($schools as $school)
                                 <option value="{{ $school->npsn }}" @selected(old('school_npsn') == $school->npsn)>{{ $school->nama_sekolah }}</option>

@@ -242,7 +242,9 @@ class CaseController extends Controller
         abort_unless(in_array($data['status'], $allowed[$case->status] ?? [], true), 422, 'Transisi status tidak diizinkan.');
 
         if ($data['status'] === 'CLOSED') {
-            abort_unless(DB::table('case_resolution_documents')->where('case_id', $case->id)->where('verification_status', 'VALID')->exists(), 422, 'Kasus belum memiliki dokumen penyelesaian yang valid.');
+            if (!DB::table('case_resolution_documents')->where('case_id', $case->id)->where('verification_status', 'VALID')->exists()) {
+                return back()->with('error', 'Kasus tidak dapat ditutup karena belum memiliki dokumen penyelesaian yang valid.');
+            }
         }
 
         DB::transaction(function () use ($case, $data) {

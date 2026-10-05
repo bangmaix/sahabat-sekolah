@@ -23,7 +23,8 @@
         <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Cari nomor, kategori, atau kronologi...">
     </div>
     <select name="status">
-        <option value="">Semua status</option>
+        <option value="">Kasus aktif</option>
+        <option value="ALL" @selected(($filters['status'] ?? '') === 'ALL')>Semua status</option>
         <option value="PENDING_RESPONSE" @selected(($filters['status'] ?? '') === 'PENDING_RESPONSE')>Menunggu respons</option>
         <option value="UNDER_VERIFICATION" @selected(($filters['status'] ?? '') === 'UNDER_VERIFICATION')>Verifikasi</option>
         <option value="IN_HANDLING" @selected(($filters['status'] ?? '') === 'IN_HANDLING')>Penanganan</option>
