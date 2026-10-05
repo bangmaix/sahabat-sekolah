@@ -343,6 +343,30 @@
             @if (session('user_role') === 'COUNSELOR')
                 <form class="participant-form" method="POST" action="{{ route('cases.parent-involvement', $case->case_number) }}">
                     @csrf
+                    <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #1e293b;">Tambah pelibatan</span>
+                        <style>
+                            .parent-popover summary::-webkit-details-marker { display: none; }
+                            .parent-popover[open] summary i { color: #2563eb; }
+                        </style>
+                        <details class="parent-popover" style="position: relative; display: inline-block;">
+                            <summary style="list-style: none; cursor: pointer; display: flex; align-items: center; color: #94a3b8; outline: none;" title="Kenapa butuh pelibatan orang tua?">
+                                <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            </summary>
+                            <div style="position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 50; width: 340px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 11px; color: #475569; line-height: 1.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); cursor: default; font-weight: normal; text-align: left;">
+                                <strong style="display: block; margin-bottom: 4px; color: #1e293b; font-size: 12px;">Pentingnya Pelibatan Orang Tua</strong>
+                                <p style="margin: 0 0 10px 0;">Pelibatan diperlukan untuk memastikan transparansi, memberi dukungan moral, dan menyelaraskan penyelesaian kasus secara holistik.</p>
+                                <strong style="display: block; margin-bottom: 4px; color: #1e293b; font-size: 11px;">Penjelasan Status:</strong>
+                                <ul style="margin: 0; padding-left: 16px; display: grid; gap: 4px;">
+                                    <li><b>Tidak diperlukan:</b> Kasus ringan atau butuh privasi tinggi, cukup ditangani di sekolah.</li>
+                                    <li><b>Menunggu keputusan:</b> Masih dievaluasi apakah kasus ini butuh campur tangan orang tua.</li>
+                                    <li><b>Disetujui:</b> Pihak sekolah sudah sepakat untuk melibatkan orang tua.</li>
+                                    <li><b>Sudah dihubungi:</b> Pesan, telepon, atau surat panggilan sudah dikirimkan ke orang tua.</li>
+                                    <li><b>Selesai:</b> Proses diskusi atau mediasi bersama orang tua telah terlaksana.</li>
+                                </ul>
+                            </div>
+                        </details>
+                    </div>
                     <input name="parent_name" required placeholder="Nama orang tua">
                     <input name="parent_contact" placeholder="Kontak opsional">
                     <select name="status">
