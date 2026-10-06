@@ -23,7 +23,8 @@
         <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Cari nomor, kategori, atau kronologi...">
     </div>
     <select name="status">
-        <option value="">Semua status</option>
+        <option value="">Kasus aktif</option>
+        <option value="ALL" @selected(($filters['status'] ?? '') === 'ALL')>Semua status</option>
         <option value="PENDING_RESPONSE" @selected(($filters['status'] ?? '') === 'PENDING_RESPONSE')>Menunggu respons</option>
         <option value="UNDER_VERIFICATION" @selected(($filters['status'] ?? '') === 'UNDER_VERIFICATION')>Verifikasi</option>
         <option value="IN_HANDLING" @selected(($filters['status'] ?? '') === 'IN_HANDLING')>Penanganan</option>
@@ -72,7 +73,16 @@
                         <td>{{ $case->identity_mode === 'ANONYMOUS' ? 'Anonim' : $case->reporter_role }}</td>
                         <td><span class="status {{ strtolower($case->status) }}">{{ str_replace('_', ' ', $case->status) }}</span></td>
                         <td><span class="priority {{ strtolower($case->risk_level) }}">{{ $case->risk_level }}</span></td>
-                        <td><span class="sla-{{ strtolower($case->sla_status) }}">{{ $case->sla_status }}</span></td>
+                        <td>
+                            @if ($case->status === 'PENDING_RESPONSE')
+                                <span class="text-gray-400">-</span>
+                            @else
+                                @php
+                                    $activeSla = in_array($case->status, ['RESOLVED', 'CLOSED']) ? 'COMPLETED' : $case->resolution_status;
+                                @endphp
+                                <span class="sla-{{ strtolower($activeSla) }}">{{ $activeSla }}</span>
+                            @endif
+                        </td>
                         <td>
                             <a class="view-button" href="{{ route('cases.show', $case->case_number) }}">
                                 Buka Kasus <i data-lucide="arrow-right"></i>

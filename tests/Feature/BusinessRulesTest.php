@@ -11,25 +11,23 @@ class BusinessRulesTest extends TestCase
 {
     use RefreshDatabase;
 
-    private int $schoolId;
-    private int $otherSchoolId;
+    private string $schoolNpsn = '10307412';
+    private string $otherSchoolNpsn = '10307415';
     private string $caseNumber = 'SS-TEST-000001';
 
     protected function setUp(): void
     {
         parent::setUp();
         $now = now();
-        $this->schoolId = DB::table('schools')->insertGetId(['name' => 'Sekolah Uji', 'education_level' => 'MIN', 'created_at' => $now, 'updated_at' => $now]);
-        $this->otherSchoolId = DB::table('schools')->insertGetId(['name' => 'Sekolah Lain', 'education_level' => 'SMP', 'created_at' => $now, 'updated_at' => $now]);
-        DB::table('users')->insert(['name' => 'BK Uji', 'email' => 'bk-test@example.test', 'password' => Hash::make('password'), 'role' => 'COUNSELOR', 'school_id' => $this->schoolId, 'created_at' => $now, 'updated_at' => $now]);
-        $reportId = DB::table('reports')->insertGetId(['school_id' => $this->schoolId, 'report_number' => $this->caseNumber, 'reporter_role' => 'WITNESS', 'identity_mode' => 'CONFIDENTIAL', 'category' => 'Verbal', 'description' => 'Kronologi laporan uji yang cukup panjang.', 'submitted_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
-        $caseId = DB::table('cases')->insertGetId(['school_id' => $this->schoolId, 'report_id' => $reportId, 'case_number' => $this->caseNumber, 'category' => 'Verbal', 'risk_level' => 'MEDIUM', 'status' => 'PENDING_RESPONSE', 'opened_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('users')->insert(['name' => 'BK Uji', 'email' => 'bk-test@example.test', 'password' => Hash::make('password'), 'role' => 'COUNSELOR', 'school_npsn' => $this->schoolNpsn, 'created_at' => $now, 'updated_at' => $now]);
+        $reportId = DB::table('reports')->insertGetId(['school_npsn' => $this->schoolNpsn, 'report_number' => $this->caseNumber, 'reporter_role' => 'WITNESS', 'identity_mode' => 'CONFIDENTIAL', 'category' => 'Verbal', 'description' => 'Kronologi laporan uji yang cukup panjang.', 'submitted_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
+        $caseId = DB::table('cases')->insertGetId(['school_npsn' => $this->schoolNpsn, 'report_id' => $reportId, 'case_number' => $this->caseNumber, 'category' => 'Verbal', 'risk_level' => 'MEDIUM', 'status' => 'PENDING_RESPONSE', 'opened_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
         DB::table('case_slas')->insert(['case_id' => $caseId, 'status' => 'ON_TIME', 'response_deadline' => $now->addDay(), 'created_at' => $now, 'updated_at' => $now]);
     }
 
     private function counselorSession(): array
     {
-        return ['user_id' => 1, 'user_name' => 'BK Uji', 'user_role' => 'COUNSELOR', 'school_id' => $this->schoolId];
+        return ['user_id' => 1, 'user_name' => 'BK Uji', 'user_role' => 'COUNSELOR', 'school_npsn' => $this->schoolNpsn];
     }
 
     public function test_school_scope_denies_other_school_case(): void
@@ -54,8 +52,8 @@ class BusinessRulesTest extends TestCase
     public function test_anonymous_report_creates_hashed_token(): void
     {
         $response = $this->post('/reports', [
-            'school_id' => $this->schoolId, 'reporter_role' => 'WITNESS', 'identity_mode' => 'ANONYMOUS',
-            'category' => 'Perundungan Verbal', 'description' => 'Laporan anonim untuk pengujian token yang aman.',
+            'school_npsn' => $this->schoolNpsn, 'reporter_role' => 'WITNESS', 'identity_mode' => 'ANONYMOUS',
+            'category' => 'Cyberbullying', 'description' => 'Laporan anonim untuk pengujian token yang aman.',
         ]);
         $response->assertRedirect(route('reports.receipt'));
         $this->assertDatabaseCount('anonymous_report_tokens', 1);

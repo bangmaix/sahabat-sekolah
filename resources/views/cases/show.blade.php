@@ -90,22 +90,52 @@
             @if (session('user_role') === 'COUNSELOR')
                 <form class="participant-form" method="POST" action="{{ route('cases.participants', $case->case_number) }}">
                     @csrf
-                    <select name="participant_type">
-                        <option value="VICTIM">Korban</option>
-                        <option value="REPORTER">Pelapor</option>
-                        <option value="WITNESS">Saksi</option>
-                        <option value="ALLEGED_PERPETRATOR">Terduga pelaku</option>
-                        <option value="OTHER">Lainnya</option>
-                    </select>
-                    <input name="display_name" required placeholder="Nama pihak terkait">
-                    <select name="identity_visibility">
-                        <option value="CASE_RESTRICTED">Terbatas</option>
-                        <option value="CASE_FULL">Penuh</option>
-                        <option value="CASE_SENSITIVE">Sangat sensitif</option>
-                    </select>
-                    <button class="secondary-button" type="submit">
-                        <i data-lucide="user-plus"></i> Tambah pihak
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Peran</label>
+                        <select name="participant_type">
+                            <option value="VICTIM">Korban</option>
+                            <option value="REPORTER">Pelapor</option>
+                            <option value="WITNESS">Saksi</option>
+                            <option value="ALLEGED_PERPETRATOR">Terduga pelaku</option>
+                            <option value="OTHER">Lainnya</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #64748b; font-weight: 500;">Nama Pihak Terkait</label>
+                        <input name="display_name" required placeholder="Nama lengkap">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label style="font-size: 10px; color: #64748b; font-weight: 500;">Visibilitas Identitas</label>
+                            <style>
+                                .visibility-popover summary::-webkit-details-marker { display: none; }
+                                .visibility-popover[open] summary i { color: #2563eb; }
+                            </style>
+                            <details class="visibility-popover" style="position: relative; display: inline-block;">
+                                <summary style="list-style: none; cursor: pointer; display: flex; align-items: center; color: #94a3b8; outline: none;" title="Info Visibilitas">
+                                    <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                                </summary>
+                                <div style="position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 50; width: 280px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 11px; color: #475569; line-height: 1.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); cursor: default; font-weight: normal; text-transform: none;">
+                                    <strong style="display: block; margin-bottom: 6px; color: #1e293b; font-size: 12px;">Tingkat Visibilitas</strong>
+                                    <ul style="margin: 0; padding-left: 18px; display: grid; gap: 4px;">
+                                        <li><b>Terbatas:</b> Identitas disamarkan bagi pihak di luar penanganan utama.</li>
+                                        <li><b>Penuh:</b> Identitas terlihat di seluruh dokumen dan pihak terkait.</li>
+                                        <li><b>Sangat sensitif:</b> Hanya dapat dilihat oleh Kepala Sekolah dan Guru BK yang menangani.</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        </div>
+                        <select name="identity_visibility">
+                            <option value="CASE_RESTRICTED">Terbatas</option>
+                            <option value="CASE_FULL">Penuh</option>
+                            <option value="CASE_SENSITIVE">Sangat sensitif</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button class="secondary-button" type="submit" style="width: 100%;">
+                            <i data-lucide="user-plus"></i> Tambah pihak
+                        </button>
+                    </div>
                 </form>
             @endif
         </div>
@@ -113,7 +143,33 @@
         <div class="case-panel risk-panel">
             <div class="case-panel-heading">
                 <div>
-                    <h2>Penilaian risiko</h2>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        Penilaian risiko
+                        <style>
+                            .risk-popover summary::-webkit-details-marker { display: none; }
+                            .risk-popover[open] summary i { color: #2563eb; }
+                        </style>
+                        <details class="risk-popover" style="position: relative; display: inline-block;">
+                            <summary style="list-style: none; cursor: pointer; display: flex; align-items: center; color: #94a3b8; outline: none;" title="Panduan Penilaian">
+                                <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                            </summary>
+                            <div style="position: absolute; left: 0; top: calc(100% + 8px); z-index: 50; width: 340px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 11px; color: #475569; line-height: 1.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); cursor: default; font-weight: normal;">
+                                <strong style="display: block; margin-bottom: 8px; color: #1e293b; font-size: 12px;">Panduan Penilaian (Total 100 Poin)</strong>
+                                <ul style="margin: 0; padding-left: 20px; margin-bottom: 12px; display: grid; gap: 4px;">
+                                    <li><b>Kategori (0-25):</b> Berdasarkan keparahan kategori & subkategori kejadian.</li>
+                                    <li><b>Keselamatan (0-25):</b> Menilai tingkat ancaman atau bahaya keselamatan fisik/psikologis.</li>
+                                    <li><b>Pengulangan (0-25):</b> Seberapa sering atau potensi kejadian ini berulang di masa depan.</li>
+                                    <li><b>Dampak (0-25):</b> Dampak yang ditimbulkan terhadap korban (trauma, cedera, dll).</li>
+                                </ul>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: 600;">0-25: LOW</span>
+                                    <span style="background: #fef08a; color: #854d0e; padding: 3px 8px; border-radius: 4px; font-weight: 600;">26-50: MEDIUM</span>
+                                    <span style="background: #fed7aa; color: #9a3412; padding: 3px 8px; border-radius: 4px; font-weight: 600;">51-75: HIGH</span>
+                                    <span style="background: #fecaca; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 600;">76-100: CRITICAL</span>
+                                </div>
+                            </div>
+                        </details>
+                    </h2>
                     <p class="panel-subtitle">Skor tersimpan sebagai bagian dari histori kasus.</p>
                 </div>
                 @if ($riskAssessment)
@@ -287,6 +343,30 @@
             @if (session('user_role') === 'COUNSELOR')
                 <form class="participant-form" method="POST" action="{{ route('cases.parent-involvement', $case->case_number) }}">
                     @csrf
+                    <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #1e293b;">Tambah pelibatan</span>
+                        <style>
+                            .parent-popover summary::-webkit-details-marker { display: none; }
+                            .parent-popover[open] summary i { color: #2563eb; }
+                        </style>
+                        <details class="parent-popover" style="position: relative; display: inline-block;">
+                            <summary style="list-style: none; cursor: pointer; display: flex; align-items: center; color: #94a3b8; outline: none;" title="Kenapa butuh pelibatan orang tua?">
+                                <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            </summary>
+                            <div style="position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 50; width: 340px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 11px; color: #475569; line-height: 1.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); cursor: default; font-weight: normal; text-align: left;">
+                                <strong style="display: block; margin-bottom: 4px; color: #1e293b; font-size: 12px;">Pentingnya Pelibatan Orang Tua</strong>
+                                <p style="margin: 0 0 10px 0;">Pelibatan diperlukan untuk memastikan transparansi, memberi dukungan moral, dan menyelaraskan penyelesaian kasus secara holistik.</p>
+                                <strong style="display: block; margin-bottom: 4px; color: #1e293b; font-size: 11px;">Penjelasan Status:</strong>
+                                <ul style="margin: 0; padding-left: 16px; display: grid; gap: 4px;">
+                                    <li><b>Tidak diperlukan:</b> Kasus ringan atau butuh privasi tinggi, cukup ditangani di sekolah.</li>
+                                    <li><b>Menunggu keputusan:</b> Masih dievaluasi apakah kasus ini butuh campur tangan orang tua.</li>
+                                    <li><b>Disetujui:</b> Pihak sekolah sudah sepakat untuk melibatkan orang tua.</li>
+                                    <li><b>Sudah dihubungi:</b> Pesan, telepon, atau surat panggilan sudah dikirimkan ke orang tua.</li>
+                                    <li><b>Selesai:</b> Proses diskusi atau mediasi bersama orang tua telah terlaksana.</li>
+                                </ul>
+                            </div>
+                        </details>
+                    </div>
                     <input name="parent_name" required placeholder="Nama orang tua">
                     <input name="parent_contact" placeholder="Kontak opsional">
                     <select name="status">
@@ -315,17 +395,17 @@
                     <button class="primary-button" type="submit"><i data-lucide="message-circle"></i> Beri respons awal</button>
                 </form>
             @elseif ($case->status === 'UNDER_VERIFICATION')
-                <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
+                <form method="POST" action="{{ route('cases.status', $case->case_number) }}" style="display: flex; flex-direction: column; gap: 12px;">
                     @csrf
-                    <input type="hidden" name="status" value="IN_HANDLING">
-                    <textarea name="reason" rows="2" placeholder="Catatan hasil verifikasi (opsional)"></textarea>
-                    <button class="primary-button" type="submit"><i data-lucide="clipboard-check"></i> Mulai penanganan</button>
-                </form>
-                <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
-                    @csrf
-                    <input type="hidden" name="status" value="RESOLVED">
-                    <textarea name="reason" rows="2" placeholder="Alasan penyelesaian"></textarea>
-                    <button class="secondary-button" type="submit"><i data-lucide="circle-check"></i> Tandai selesai</button>
+                    <div>
+                        <select name="status" required>
+                            <option value="">Pilih tindakan selanjutnya...</option>
+                            <option value="IN_HANDLING">Mulai penanganan</option>
+                            <option value="RESOLVED">Tandai selesai</option>
+                        </select>
+                    </div>
+                    <textarea name="reason" rows="2" placeholder="Catatan atau alasan (opsional)..."></textarea>
+                    <button class="primary-button" type="submit"><i data-lucide="arrow-right-circle"></i> Perbarui status</button>
                 </form>
             @elseif ($case->status === 'IN_HANDLING')
                 <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
@@ -335,10 +415,21 @@
                     <button class="primary-button" type="submit"><i data-lucide="circle-check"></i> Tandai selesai</button>
                 </form>
             @elseif ($case->status === 'RESOLVED')
+                @php
+                    $hasResolutionDoc = $resolutionDocuments->where('verification_status', 'VALID')->count() > 0;
+                @endphp
                 <form method="POST" action="{{ route('cases.status', $case->case_number) }}">
                     @csrf
                     <input type="hidden" name="status" value="CLOSED">
-                    <button class="primary-button" type="submit"><i data-lucide="lock"></i> Tutup kasus</button>
+                    @if (!$hasResolutionDoc)
+                        <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: #991b1b; line-height: 1.4;">
+                            <i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: text-bottom; margin-right: 4px;"></i>
+                            Anda wajib mengunggah dokumen penyelesaian terlebih dahulu.
+                        </div>
+                    @endif
+                    <button class="primary-button" type="submit" @disabled(!$hasResolutionDoc) style="{{ !$hasResolutionDoc ? 'opacity: 0.5; cursor: not-allowed;' : '' }}">
+                        <i data-lucide="lock"></i> Tutup kasus
+                    </button>
                 </form>
             @else
                 <div class="done-state">

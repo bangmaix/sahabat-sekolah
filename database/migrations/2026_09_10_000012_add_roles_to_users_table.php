@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('role', 30)->default('COUNSELOR');
-            $table->foreignId('school_id')->nullable()->after('role')->constrained('schools')->nullOnDelete();
+            $table->string('school_npsn', 20)->nullable()->after('role');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('school_id');
+            $table->dropColumn('school_npsn');
             $table->dropColumn('role');
         });
     }

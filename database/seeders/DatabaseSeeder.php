@@ -19,17 +19,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $now = Carbon::now();
-        $schools = [];
-        foreach ([['MIN Kota Bukittinggi', 'MIN'], ['MTsN 1 Kota Bukittinggi', 'MTS']] as [$name, $level]) {
-            $schools[$name] = DB::table('schools')->insertGetId([
-                'name' => $name, 'education_level' => $level,
-                'created_at' => $now, 'updated_at' => $now,
-            ]);
-        }
+        $sekolahList = collect((new \App\Helpers\AConnect())->getSekolahList());
+        
+        // Asumsi data yang ada di API, jika tidak ada fallback ke NPSN sembarang
+        $npsnMin = '10307512';
+        $npsnMts = '10307512';
 
         DB::table('users')->insert([
-            ['name' => 'Bu Ratna Sari', 'email' => 'bk@sahabat.test', 'password' => Hash::make('password'), 'role' => 'COUNSELOR', 'school_id' => $schools['MIN Kota Bukittinggi'], 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'Kepala Sekolah', 'email' => 'kepala@sahabat.test', 'password' => Hash::make('password'), 'role' => 'PRINCIPAL', 'school_id' => $schools['MIN Kota Bukittinggi'], 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Bu Ratna Sari', 'email' => 'bk@sahabat.test', 'password' => Hash::make('password'), 'role' => 'COUNSELOR', 'school_npsn' => $npsnMin, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Kepala Sekolah', 'email' => 'kepala@sahabat.test', 'password' => Hash::make('password'), 'role' => 'PRINCIPAL', 'school_npsn' => $npsnMin, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         $demoCases = [
@@ -41,13 +39,14 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($demoCases as [$number, $category, $risk, $status, $sla, $school, $description]) {
+            $schoolNpsn = $school === 'MIN Kota Bukittinggi' ? $npsnMin : $npsnMts;
             $reportId = DB::table('reports')->insertGetId([
-                'school_id' => $schools[$school], 'report_number' => $number, 'reporter_role' => 'WITNESS',
+                'school_npsn' => $schoolNpsn, 'report_number' => $number, 'reporter_role' => 'WITNESS',
                 'identity_mode' => 'CONFIDENTIAL', 'category' => $category, 'description' => $description,
                 'submitted_at' => $now->copy()->subDays(rand(0, 9)), 'created_at' => $now, 'updated_at' => $now,
             ]);
             $caseId = DB::table('cases')->insertGetId([
-                'school_id' => $schools[$school], 'report_id' => $reportId, 'case_number' => $number,
+                'school_npsn' => $schoolNpsn, 'report_id' => $reportId, 'case_number' => $number,
                 'category' => $category, 'risk_level' => $risk, 'status' => $status,
                 'opened_at' => $now->copy()->subDays(rand(0, 9)), 'created_at' => $now, 'updated_at' => $now,
             ]);

@@ -1,0 +1,773 @@
+PRODUCT REQUIREMENTS DOCUMENT (PRD) FINAL TERPADU
+SAHABAT SEKOLAH
+Platform Pelaporan, Pencegahan, dan Penanganan Perundungan di Lingkungan Pendidikan Kota Bukittinggi
+Versi: 1.0Status: Final untuk Tahap MVP dan Pilot ProjectWilayah Implementasi: Kota BukittinggiPilot Project: MIN Kota Bukittinggi dan MTsN 1 Kota Bukittinggi
+1. LATAR BELAKANG
+Sekolah harus menjadi ruang yang aman bagi setiap peserta didik untuk belajar, berkembang, berinteraksi, dan membentuk karakter tanpa rasa takut terhadap kekerasan, intimidasi, penghinaan, pengucilan, maupun perundungan melalui media digital.
+Perundungan dapat terjadi dalam berbagai bentuk, antara lain:
+perundungan fisik;
+perundungan verbal;
+perundungan sosial;
+cyberbullying;
+perundungan bernuansa seksual;
+bentuk perundungan lainnya.
+Penanganan kasus perundungan di sekolah sering menghadapi sejumlah kendala, antara lain:
+korban atau saksi takut melapor;
+identitas pelapor berpotensi diketahui oleh pihak yang tidak berwenang;
+laporan tidak terdokumentasi secara terstruktur;
+tindak lanjut sulit dipantau;
+keterlambatan respons tidak terukur;
+Kepala Sekolah tidak memiliki mekanisme monitoring yang memadai;
+bukti penanganan kasus tidak tersimpan secara terintegrasi;
+data kasus sulit dianalisis untuk kebutuhan pencegahan.
+SAHABAT SEKOLAH dibangun sebagai platform digital untuk menyediakan mekanisme pelaporan, verifikasi, penanganan, pemantauan, dokumentasi, dan penyelesaian kasus perundungan secara terstruktur.
+Sistem menempatkan Guru Bimbingan dan Konseling (BK) sebagai aktor utama dalam penerimaan dan penanganan kasus.
+2. VISI PRODUK
+Mewujudkan lingkungan pendidikan Kota Bukittinggi yang aman, responsif, dan bebas dari perundungan melalui sistem digital yang melindungi peserta didik dan mendukung penanganan kasus secara terukur.
+3. TUJUAN SISTEM
+SAHABAT SEKOLAH bertujuan untuk:
+menyediakan kanal pelaporan perundungan yang aman;
+melindungi identitas korban dan pelapor;
+memungkinkan pelaporan oleh korban maupun saksi;
+memastikan setiap laporan diterima oleh Guru BK;
+memastikan respons awal dilakukan maksimal 1 × 24 jam;
+membantu Guru BK melakukan verifikasi dan penanganan kasus;
+menerapkan penilaian tingkat risiko;
+menyediakan mekanisme eskalasi kepada Kepala Sekolah;
+mendokumentasikan seluruh proses penanganan;
+memastikan kasus hanya ditutup setelah tersedia bukti penyelesaian;
+menyediakan audit trail;
+menghasilkan data agregat untuk evaluasi dan pencegahan perundungan.
+4. TARGET IMPLEMENTASI
+4.1 Target Utama
+SAHABAT SEKOLAH dirancang untuk digunakan oleh sekolah di Kota Bukittinggi:
+SD;
+SDI;
+MIN;
+SMP;
+MTs.
+4.2 Pilot Project
+Implementasi tahap pertama dilakukan pada:
+1. MIN Kota Bukittinggi
+2. MTsN 1 Kota Bukittinggi
+Pilot Project digunakan untuk:
+menguji proses bisnis;
+menguji kemudahan penggunaan;
+mengevaluasi efektivitas Guru BK;
+menguji mekanisme pelaporan;
+mengevaluasi SLA;
+menguji perlindungan identitas;
+menyempurnakan sistem sebelum implementasi lebih luas.
+5. RUANG LINGKUP PRODUK
+SAHABAT SEKOLAH terdiri atas dua platform utama.
+5.1 Aplikasi Mobile
+Digunakan terutama oleh:
+peserta didik;
+pelapor;
+saksi.
+Fungsi utama:
+membuat laporan;
+memilih jenis pelaporan;
+mengirim kronologi;
+mengunggah bukti;
+memantau laporan;
+memberikan informasi tambahan;
+berkomunikasi secara aman dengan Guru BK.
+5.2 Web Dashboard
+Dibangun menggunakan Laravel dan digunakan oleh:
+Guru BK;
+Kepala Sekolah;
+Administrator.
+Fungsi utama:
+manajemen laporan;
+verifikasi;
+Case Management;
+Risk Assessment;
+SLA Monitoring;
+Reminder;
+Escalation;
+dokumentasi penanganan;
+monitoring;
+audit.
+6. AKTOR SISTEM
+6.1 Peserta Didik
+Peserta didik dapat berperan sebagai:
+korban;
+saksi;
+pihak yang mengetahui kejadian.
+6.2 Guru BK
+Guru BK merupakan aktor utama Case Management.
+Guru BK bertanggung jawab untuk:
+menerima laporan;
+melakukan respons awal;
+melakukan verifikasi;
+menentukan kategori;
+menentukan subkategori;
+melakukan penilaian risiko;
+melakukan penanganan;
+menentukan pelibatan orang tua;
+menentukan eskalasi;
+mendokumentasikan tindakan;
+mengunggah bukti penyelesaian;
+menutup kasus sesuai Business Rules.
+6.3 Kepala Sekolah
+Kepala Sekolah berfungsi sebagai:
+pihak monitoring;
+penerima notifikasi eskalasi;
+penerima notifikasi SLA overdue.
+Kepala Sekolah bukan aktor utama dalam seluruh penanganan operasional kasus.
+6.4 Orang Tua
+Orang tua hanya dilibatkan berdasarkan keputusan Guru BK.
+Sistem tidak secara otomatis menghubungi orang tua pada setiap laporan.
+6.5 Administrator
+Administrator bertugas mengelola:
+pengguna;
+sekolah;
+role;
+konfigurasi;
+master data;
+operasional teknis sistem.
+7. MODEL PELAPORAN
+Sistem menyediakan tiga model identitas.
+7.1 Identified Report
+Pelapor menggunakan identitas lengkap.
+Identitas dapat digunakan Guru BK untuk:
+memahami kronologi;
+melakukan klarifikasi;
+meminta informasi tambahan;
+memberikan tindak lanjut.
+7.2 Confidential Report
+Identitas pelapor tersedia di sistem, tetapi disamarkan dari pihak yang tidak berwenang.
+Akses identitas mengikuti prinsip:
+Need to Know dan Minimum Necessary Access.
+7.3 Anonymous Report
+Pelapor dapat menyampaikan laporan tanpa mengungkapkan identitas.
+Sistem menyediakan:
+Anonymous Token;
+Anonymous Communication Channel.
+Guru BK dapat meminta informasi tambahan tanpa mengetahui identitas pelapor.
+8. MODEL PERAN PELAPOR
+Pelapor memilih perannya ketika membuat laporan.
+8.1 Saya Korban
+Peserta didik melaporkan kejadian yang dialami sendiri.
+8.2 Saya Saksi
+Peserta didik melaporkan kejadian yang dilihat atau diketahui.
+8.3 Saya Mengetahui Kejadian
+Digunakan bagi pihak yang memiliki informasi mengenai dugaan perundungan.
+9. PERLINDUNGAN IDENTITAS
+Identitas peserta didik merupakan data sensitif.
+Sistem menerapkan prinsip:
+identitas tidak ditampilkan secara bebas;
+identitas dapat disamarkan;
+akses berbasis Role;
+akses berbasis School Scope;
+akses berbasis Case Scope;
+seluruh akses sensitif dicatat;
+Guru BK dapat meminta informasi tambahan apabila diperlukan;
+pelaku tidak memperoleh identitas pelapor melalui sistem.
+10. KATEGORI PERUNDUNGAN
+Sistem menggunakan kategori utama berikut.
+10.1 Perundungan Fisik
+Contoh:
+memukul;
+menendang;
+mendorong;
+menjegal;
+mencubit;
+merusak barang;
+tindakan fisik intimidatif lainnya.
+10.2 Perundungan Verbal
+Contoh:
+menghina;
+mengejek;
+memberikan julukan merendahkan;
+mengancam;
+mempermalukan;
+menggunakan kata-kata kasar;
+penghinaan terhadap kondisi tertentu.
+10.3 Perundungan Sosial
+Contoh:
+pengucilan;
+mengajak orang lain menjauhi korban;
+mempermalukan secara sosial;
+menyebarkan rumor;
+merusak hubungan pertemanan;
+intimidasi kelompok.
+10.4 Cyberbullying
+Contoh:
+penghinaan melalui media sosial;
+pesan intimidatif;
+penyebaran foto atau video tanpa izin;
+penyebaran informasi untuk mempermalukan;
+ancaman digital;
+impersonasi;
+serangan melalui platform digital.
+10.5 Perundungan Bernuansa Seksual
+Kategori ini mencakup tindakan atau komunikasi bernuansa seksual yang tidak pantas dan memerlukan penanganan dengan tingkat kerahasiaan tinggi.
+10.6 Kategori Lainnya
+Digunakan untuk dugaan perundungan yang belum tercakup dalam kategori standar.
+11. RISK ENGINE
+Setiap kategori dan subkategori memiliki parameter risiko.
+Sistem menggunakan tingkat risiko:
+LOWMEDIUMHIGHCRITICAL
+Penilaian risiko mempertimbangkan:
+kategori kejadian;
+subkategori;
+tingkat ancaman;
+dampak terhadap korban;
+kemungkinan kejadian berulang;
+bukti yang tersedia;
+faktor keselamatan.
+Sistem menyimpan:
+nilai risiko;
+tingkat risiko;
+waktu penilaian;
+pihak yang melakukan penilaian;
+riwayat perubahan risiko.
+Guru BK tetap memiliki peran profesional dalam penilaian dan penanganan kasus.
+12. BUSINESS RULES UTAMA
+BR-01 — Penerima Laporan Pertama
+Setiap laporan diterima pertama kali oleh:
+Guru BK.
+BR-02 — Verifikasi
+Verifikasi dilakukan oleh:
+Guru BK.
+BR-03 — SLA Respons Awal
+Guru BK wajib memberikan respons awal maksimal:
+1 × 24 jam sejak laporan diterima sistem.
+BR-04 — Reminder
+Sistem memberikan reminder kepada Guru BK sebelum batas waktu SLA berakhir.
+BR-05 — SLA Overdue
+Apabila laporan tidak ditindaklanjuti sesuai SLA:
+SLA STATUS = OVERDUE
+BR-06 — Notifikasi Kepala Sekolah
+Kepala Sekolah memperoleh notifikasi apabila:
+Guru BK mengabaikan laporan sehingga SLA terlampaui; atau
+Guru BK melakukan eskalasi kasus.
+BR-07 — Pelibatan Orang Tua
+Orang tua dilibatkan berdasarkan keputusan:
+Guru BK.
+BR-08 — Eskalasi
+Kasus dapat dieskalasi kepada Kepala Sekolah apabila Guru BK menilai kasus perlu disampaikan pada tingkat tersebut.
+BR-09 — Penyelesaian Kasus
+Kasus dinyatakan selesai secara substansi ketika Guru BK menyelesaikan proses penanganan.
+Status:
+RESOLVED
+BR-10 — Penutupan Kasus
+Kasus hanya dapat ditutup apabila:
+tersedia dokumen penyelesaian;
+dokumen telah memenuhi status valid sesuai mekanisme sistem.
+Status:
+CLOSED
+BR-11 — Audit Trail
+Setiap aktivitas penting harus tercatat.
+13. CASE WORKFLOW
+Alur utama sistem:
+PESERTA DIDIK / SAKSI        ↓LAPORAN MASUK        ↓PENDING_RESPONSE        ↓UNDER_VERIFICATION        ↓IN_HANDLING        ↓RESOLVED        ↓CLOSED
+14. CASE STATE MACHINE
+Sistem menggunakan lima status utama.
+14.1 PENDING_RESPONSE
+Laporan baru masuk.
+Menunggu tindakan awal Guru BK.
+14.2 UNDER_VERIFICATION
+Guru BK melakukan:
+pemeriksaan laporan;
+klarifikasi;
+pemeriksaan bukti;
+identifikasi kategori;
+penilaian risiko.
+14.3 IN_HANDLING
+Kasus sedang ditangani.
+Aktivitas dapat mencakup:
+konseling;
+klarifikasi;
+pengumpulan bukti;
+tindak lanjut;
+pelibatan orang tua;
+eskalasi.
+Aktivitas tersebut disimpan sebagai data tindakan dan bukan status utama.
+14.4 RESOLVED
+Penanganan substansi telah selesai.
+Kasus belum ditutup secara administratif.
+14.5 CLOSED
+Status akhir.
+Kasus hanya dapat ditutup setelah persyaratan dokumen penyelesaian terpenuhi.
+15. TRANSISI STATUS
+Dari
+Ke
+Aktor
+PENDING_RESPONSE
+UNDER_VERIFICATION
+Guru BK
+UNDER_VERIFICATION
+IN_HANDLING
+Guru BK
+UNDER_VERIFICATION
+RESOLVED
+Guru BK
+IN_HANDLING
+RESOLVED
+Guru BK
+RESOLVED
+CLOSED
+Guru BK
+16. TRANSISI YANG DILARANG
+Sistem menolak:
+PENDING_RESPONSE → CLOSEDPENDING_RESPONSE → RESOLVEDUNDER_VERIFICATION → CLOSEDIN_HANDLING → CLOSED
+Penutupan wajib mengikuti:
+IN_HANDLING     ↓RESOLVED     ↓CLOSED
+17. PEMISAHAN CASE STATUS DAN SLA
+Case Status:
+PENDING_RESPONSEUNDER_VERIFICATIONIN_HANDLINGRESOLVEDCLOSED
+SLA Status:
+ON_TIMEWARNINGOVERDUECOMPLETED
+Contoh:
+CASE STATUS : PENDING_RESPONSESLA STATUS  : OVERDUE
+Keterlambatan SLA tidak mengubah State Machine utama secara otomatis.
+18. CASE MANAGEMENT
+Setiap kasus memiliki informasi:
+Case Number;
+sekolah;
+laporan asal;
+kategori;
+subkategori;
+tingkat risiko;
+status;
+Guru BK yang menangani;
+waktu pembukaan;
+waktu penyelesaian;
+waktu penutupan.
+19. CASE PARTICIPANTS
+Peserta dalam kasus dapat terdiri atas:
+Reporter;
+Victim;
+Alleged Perpetrator;
+Witness;
+Other Participant.
+Setiap peserta memiliki pengaturan visibilitas identitas.
+20. CASE NOTES
+Guru BK dapat membuat catatan internal.
+Jenis catatan:
+Verification;
+Handling;
+Counseling;
+Follow Up;
+Internal.
+Catatan memiliki pengaturan visibilitas.
+21. CASE ACTIONS
+Setiap tindakan dicatat.
+Contoh:
+Initial Response;
+Verification;
+Counseling;
+Meeting;
+Parent Contact;
+Follow Up;
+Escalation.
+22. EVIDENCE MANAGEMENT
+Sistem mendukung bukti:
+gambar;
+video;
+audio;
+dokumen;
+screenshot;
+bukti lainnya.
+Metadata bukti mencakup:
+nama file;
+tipe file;
+ukuran;
+pengunggah;
+waktu unggah;
+tingkat visibilitas.
+23. RESOLUTION DOCUMENT
+Guru BK wajib mengunggah dokumen atau bukti penyelesaian sebelum kasus ditutup.
+Dokumen dapat mencakup:
+berita penyelesaian;
+catatan tindak lanjut;
+dokumen kesepakatan;
+bukti konseling;
+dokumen pendukung lainnya.
+24. PARENT INVOLVEMENT
+Pelibatan orang tua tidak dilakukan secara otomatis.
+Status:
+NOT_REQUIREDPENDINGAPPROVEDCONTACTEDCOMPLETED
+Keputusan pelibatan berada pada Guru BK berdasarkan kebutuhan penanganan.
+25. NOTIFICATION ENGINE
+Sistem memiliki Notification Domain.
+Notifikasi tahap MVP:
+In-App Notification.
+Event utama:
+laporan baru;
+reminder SLA;
+SLA warning;
+SLA overdue;
+eskalasi;
+informasi tambahan;
+perubahan status penting.
+26. REMINDER ENGINE
+Reminder digunakan untuk memastikan laporan tidak terabaikan.
+Alur:
+LAPORAN MASUK      ↓SLA DIMULAI      ↓WARNING      ↓REMINDER GURU BK      ↓OVERDUE      ↓NOTIFIKASI KEPALA SEKOLAH
+27. ESCALATION ENGINE
+Terdapat dua model.
+27.1 Manual Escalation
+Dilakukan oleh Guru BK.
+27.2 SLA-Based Escalation
+Dipicu ketika laporan tidak memperoleh tindakan sesuai SLA.
+28. HAK AKSES DASAR
+Peserta Didik
+Dapat:
+membuat laporan;
+melihat laporan sendiri sesuai mode identitas;
+mengirim informasi tambahan;
+mengunggah bukti.
+Tidak dapat:
+mengubah status kasus;
+melihat data pihak lain;
+melihat identitas sensitif.
+Guru BK
+Dapat:
+menerima laporan;
+melihat laporan sesuai scope sekolah;
+melakukan verifikasi;
+melakukan Risk Assessment;
+melakukan penanganan;
+membuat catatan;
+melakukan eskalasi;
+menentukan pelibatan orang tua;
+menyelesaikan kasus;
+menutup kasus.
+Kepala Sekolah
+Dapat:
+menerima notifikasi SLA overdue;
+menerima eskalasi;
+melihat ringkasan kasus sesuai kewenangan;
+melakukan monitoring.
+Administrator
+Dapat:
+mengelola pengguna;
+mengelola role;
+mengelola sekolah;
+mengelola konfigurasi;
+melakukan administrasi sistem.
+29. DATA ACCESS PRINCIPLE
+Sistem menerapkan:
+Role-Based Access Control
+Akses berdasarkan peran.
+School Scope
+Pengguna hanya mengakses data sekolah sesuai kewenangannya.
+Case Scope
+Data kasus tertentu hanya dapat diakses oleh pihak yang berwenang.
+Sensitive Data Access
+Akses identitas sensitif harus:
+dibatasi;
+dicatat;
+dapat diaudit.
+30. AUDIT LOG
+Audit Log mencatat:
+pengguna;
+aksi;
+resource;
+resource ID;
+nilai sebelum perubahan;
+nilai setelah perubahan;
+alamat IP;
+User Agent;
+waktu.
+31. SENSITIVE ACCESS LOG
+Akses terhadap data kasus dan identitas sensitif dicatat secara khusus.
+Informasi:
+siapa yang mengakses;
+kasus yang diakses;
+jenis akses;
+tingkat akses;
+alasan akses;
+waktu.
+32. DATABASE ARCHITECTURE
+Sistem menggunakan arsitektur:
+Single Platform Multi-School.
+Setiap sekolah berada dalam satu platform dengan pemisahan data berdasarkan:
+school_id
+Domain utama:
+Organization;
+Identity;
+RBAC;
+Bullying Categories;
+Reporting;
+Case Management;
+Risk Management;
+SLA;
+Reminder;
+Escalation;
+Evidence;
+Parent Involvement;
+Notification;
+Audit.
+33. DATABASE MANAGEMENT SYSTEM
+Database utama:
+PostgreSQL
+Identitas utama menggunakan:
+UUID
+Alasan:
+aman untuk API;
+cocok untuk sistem multi-school;
+tidak mudah ditebak;
+mendukung integrasi jangka panjang.
+34. DATABASE CORE TABLES
+Domain inti mencakup:
+schoolsschool_classesusersstudentsteachersparentsstudent_parentsrolespermissionsrole_permissionsuser_rolesbullying_categoriesbullying_subcategoriesreportsreporter_identitiesanonymous_report_tokenscasescase_participantscase_risk_assessmentscase_risk_historiescase_notescase_actionscase_status_historiescase_slascase_reminderscase_escalationscase_evidencescase_resolution_documentsanonymous_messagescase_parent_involvementsnotificationsnotification_logsaudit_logscase_access_logs
+35. TEKNOLOGI MVP
+Backend dan Web Dashboard
+Laravel
+Digunakan untuk:
+backend;
+REST API;
+authentication;
+authorization;
+dashboard;
+Case Management;
+job processing.
+Database
+PostgreSQL
+Mobile Application
+Flutter
+Digunakan untuk:
+Android;
+pengembangan lintas platform;
+integrasi REST API.
+36. REKOMENDASI ARSITEKTUR SISTEM
+Tahap awal menggunakan:
+MODULAR MONOLITH
+MOBILE APPLICATION      │      ▼REST API      │      ▼LARAVEL APPLICATION      │ ┌────┼─────┐ ▼    ▼     ▼POSTGRESQL REDIS STORAGE
+Microservices belum diperlukan pada tahap MVP.
+37. MODUL SISTEM
+Module 1 — Authentication
+Login;
+Logout;
+Password Management;
+Token Management.
+Module 2 — User Management
+Users;
+Roles;
+Permissions;
+School Assignment.
+Module 3 — Reporting
+Create Report;
+Reporter Type;
+Identity Mode;
+Anonymous Report;
+Evidence Upload.
+Module 4 — Case Management
+Inbox;
+Verification;
+Status;
+Actions;
+Notes;
+Participants.
+Module 5 — Risk Management
+Category Risk;
+Risk Score;
+Risk Level;
+Risk History.
+Module 6 — SLA Engine
+Response Deadline;
+Warning;
+Overdue;
+Completion.
+Module 7 — Escalation
+Manual Escalation;
+SLA Escalation;
+Principal Notification.
+Module 8 — Evidence Management
+File Upload;
+File Access;
+Sensitive Evidence Protection.
+Module 9 — Parent Involvement
+Decision;
+Approval;
+Contact;
+Completion.
+Module 10 — Notification
+In-App Notification;
+Notification Log.
+Module 11 — Audit
+Activity Log;
+Sensitive Access Log.
+38. MVP FEATURE LIST
+38.1 Mobile MVP
+Peserta Didik
+Login;
+buat laporan;
+pilih peran;
+pilih mode identitas;
+pilih kategori;
+isi kronologi;
+unggah bukti;
+kirim laporan;
+menerima nomor laporan;
+memantau laporan;
+memberikan informasi tambahan.
+38.2 Dashboard Guru BK
+Dashboard;
+Inbox laporan;
+Detail laporan;
+Verifikasi;
+Kategori dan subkategori;
+Risk Assessment;
+Case Management;
+Case Notes;
+Case Actions;
+Evidence Management;
+Parent Involvement;
+Escalation;
+Resolution;
+Closure.
+38.3 Dashboard Kepala Sekolah
+Ringkasan;
+Notifikasi;
+SLA Monitoring;
+Kasus Eskalasi;
+Monitoring sesuai kewenangan.
+38.4 Administrator
+Manajemen sekolah;
+pengguna;
+role;
+permission;
+master kategori;
+konfigurasi sistem.
+39. NON-FUNCTIONAL REQUIREMENTS
+Security
+Sistem wajib menggunakan:
+HTTPS;
+Authentication;
+Authorization;
+RBAC;
+Rate Limiting;
+Audit Log;
+Sensitive Access Logging;
+proteksi file bukti.
+Privacy
+Data identitas peserta didik tidak boleh tersedia secara terbuka.
+Performance
+Dashboard dan API harus mampu memberikan respons yang layak untuk operasional sekolah.
+Scalability
+Arsitektur harus mendukung penambahan sekolah tanpa perubahan besar pada struktur sistem.
+Availability
+Sistem harus memiliki mekanisme:
+backup database;
+backup file;
+monitoring;
+recovery.
+40. PILOT PROJECT ROADMAP
+FASE 1 — CORE REPORTING
+Fitur:
+Authentication;
+User Management;
+School Management;
+Student Reporting;
+Witness Reporting;
+Identified Report;
+Confidential Report;
+Anonymous Report;
+Evidence Upload.
+FASE 2 — CASE MANAGEMENT
+Fitur:
+Guru BK Inbox;
+Verification;
+Case Creation;
+Risk Assessment;
+Case Notes;
+Case Actions;
+Status Workflow.
+FASE 3 — SLA DAN MONITORING
+Fitur:
+SLA 1 × 24 Jam;
+Reminder;
+Overdue Detection;
+Kepala Sekolah Notification;
+Escalation.
+FASE 4 — RESOLUTION
+Fitur:
+Resolution Documentation;
+Evidence Validation;
+Case Closure;
+Audit Trail.
+FASE 5 — EVALUASI PILOT
+Evaluasi pada:
+MIN Kota Bukittinggi;
+MTsN 1 Kota Bukittinggi.
+Aspek evaluasi:
+kemudahan penggunaan;
+efektivitas pelaporan;
+kecepatan respons;
+efektivitas workflow Guru BK;
+perlindungan identitas;
+efektivitas notifikasi;
+kesiapan implementasi skala kota.
+41. INDIKATOR KEBERHASILAN MVP
+MVP dianggap berhasil apabila:
+peserta didik dapat membuat laporan dengan aman;
+Guru BK menerima laporan secara terstruktur;
+setiap laporan memiliki SLA;
+keterlambatan dapat dideteksi;
+Kepala Sekolah menerima notifikasi sesuai Business Rules;
+proses penanganan terdokumentasi;
+identitas pelapor terlindungi;
+bukti dapat dikelola dengan aman;
+kasus tidak dapat ditutup tanpa dokumen penyelesaian;
+seluruh aktivitas penting dapat diaudit.
+42. OUT OF SCOPE MVP
+Fitur berikut tidak menjadi prioritas tahap awal:
+Microservices;
+AI Detection;
+integrasi WhatsApp penuh;
+Advanced Analytics;
+Dashboard Pemerintah Kota yang kompleks;
+integrasi dengan seluruh aplikasi pendidikan;
+integrasi SPBE lintas instansi.
+Fitur tersebut dapat dipertimbangkan setelah Pilot Project berhasil.
+43. KEPUTUSAN DESAIN FINAL
+Area
+Keputusan
+Nama Sistem
+SAHABAT SEKOLAH
+Target
+SD/SDI/MIN/SMP/MTs Kota Bukittinggi
+Pilot
+MIN Kota Bukittinggi dan MTsN 1 Kota Bukittinggi
+Penerima Laporan
+Guru BK
+Verifikator
+Guru BK
+SLA Respons Awal
+1 × 24 Jam
+Pelibatan Orang Tua
+Ditentukan Guru BK
+Eskalasi
+Ditentukan Guru BK
+Notifikasi Kepala Sekolah
+Eskalasi atau SLA Overdue
+Model Pelaporan
+Identified, Confidential, Anonymous
+Penilaian Risiko
+Berdasarkan kategori dan subkategori
+Case Status
+5 Status
+Penutupan Kasus
+Wajib dokumen penyelesaian valid
+Backend
+Laravel
+Database
+PostgreSQL
+Mobile
+Flutter
+Architecture
+Modular Monolith
+Database Model
+Single Platform Multi-School
+44. PENUTUP
+SAHABAT SEKOLAH dirancang sebagai platform digital terintegrasi untuk membangun mekanisme pelaporan dan penanganan perundungan yang aman, terukur, terdokumentasi, dan dapat dipertanggungjawabkan.
+Desain sistem menempatkan Guru BK sebagai pusat penanganan kasus, dengan Kepala Sekolah sebagai pihak monitoring dan eskalasi sesuai kebutuhan. Sistem memberikan pilihan pelaporan terbuka, rahasia, dan anonim untuk mengurangi hambatan peserta didik dalam menyampaikan informasi.
+MVP difokuskan pada kebutuhan inti:
+LAPOR   ↓RESPONS   ↓VERIFIKASI   ↓PENILAIAN RISIKO   ↓PENANGANAN   ↓ESKALASI BILA DIPERLUKAN   ↓PENYELESAIAN   ↓DOKUMENTASI   ↓PENUTUPAN KASUS
+Dokumen ini menjadi Master Product Requirements Document SAHABAT SEKOLAH Versi 1.0 dan menjadi acuan utama untuk desain, pengembangan, pengujian, Pilot Project, serta pengembangan lanjutan pada seluruh satuan pendidikan di Kota Bukittinggi.

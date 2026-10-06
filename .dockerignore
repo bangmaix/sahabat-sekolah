@@ -1,0 +1,13 @@
+node_modules
+vendor
+.git
+.env
+.idea
+.vscode
+public/hot
+public/storage
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing/*

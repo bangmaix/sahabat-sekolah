@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('parents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
+            $table->string('school_npsn', 20);
             $table->string('full_name');
             $table->string('contact')->nullable();
             $table->timestamps();

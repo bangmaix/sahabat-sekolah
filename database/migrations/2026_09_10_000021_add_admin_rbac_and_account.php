@@ -19,7 +19,7 @@ return new class extends Migration
         foreach (['USER_MANAGE', 'SCHOOL_MANAGE', 'MASTER_DATA_MANAGE'] as $code) {
             DB::table('role_permissions')->insertOrIgnore(['role_id' => $roleId, 'permission_id' => DB::table('permissions')->where('code', $code)->value('id')]);
         }
-        DB::table('users')->updateOrInsert(['email' => 'admin@sahabat.test'], ['name' => 'Administrator Sahabat Sekolah', 'password' => Hash::make('password'), 'role' => 'ADMIN', 'school_id' => null, 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('users')->updateOrInsert(['email' => 'admin@sahabat.test'], ['name' => 'Administrator Sahabat Sekolah', 'password' => Hash::make('password'), 'role' => 'ADMIN', 'school_npsn' => null, 'created_at' => $now, 'updated_at' => $now]);
     }
 
     public function down(): void

@@ -98,6 +98,45 @@
     </div>
 </section>
 
+<section class="content-grid" style="margin-top: 24px;">
+    <div class="panel chart-panel" style="grid-column: 1 / -1;">
+        <div class="panel-heading">
+            <div>
+                <h3>Kinerja SLA berdasarkan Risiko</h3>
+                <p>Distribusi status penyelesaian kasus berdasarkan tingkat risiko</p>
+            </div>
+        </div>
+        <div class="bar-chart-wrap" style="display: flex; gap: 20px; align-items: flex-end; height: 200px; padding-top: 20px;">
+            @foreach(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as $risk)
+                @php 
+                    $total = $slaStats[$risk]['on_time'] + $slaStats[$risk]['overdue'];
+                    $onTimePct = $total > 0 ? ($slaStats[$risk]['on_time'] / $total) * 100 : 0;
+                    $overduePct = $total > 0 ? ($slaStats[$risk]['overdue'] / $total) * 100 : 0;
+                @endphp
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="width: 100%; height: 150px; background: #f0f0f0; border-radius: 4px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden;">
+                        @if($overduePct > 0)
+                            <div style="height: {{ $overduePct }}%; background: #ff4d4f; width: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px;" title="Overdue: {{ $slaStats[$risk]['overdue'] }}">
+                                {{ $slaStats[$risk]['overdue'] }}
+                            </div>
+                        @endif
+                        @if($onTimePct > 0)
+                            <div style="height: {{ $onTimePct }}%; background: #52c41a; width: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px;" title="On Time: {{ $slaStats[$risk]['on_time'] }}">
+                                {{ $slaStats[$risk]['on_time'] }}
+                            </div>
+                        @endif
+                    </div>
+                    <strong style="font-size: 12px; text-align: center;">{{ $risk }}</strong>
+                </div>
+            @endforeach
+        </div>
+        <div class="legend" style="margin-top: 15px; display: flex; gap: 15px; justify-content: center; font-size: 12px;">
+            <span style="display: flex; align-items: center; gap: 5px;"><i style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #52c41a;"></i> SLA Terpenuhi (On Time)</span>
+            <span style="display: flex; align-items: center; gap: 5px;"><i style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff4d4f;"></i> SLA Terlewati (Overdue)</span>
+        </div>
+    </div>
+</section>
+
 <section class="lower-grid">
     <div class="panel reports-panel" id="laporan">
         <div class="panel-heading">
@@ -161,14 +200,7 @@
                 </div>
                 <i data-lucide="chevron-right"></i>
             </a>
-            <a class="alert-item" href="{{ route('notifications.index') }}">
-                <div class="alert-badge blue-bg"><i data-lucide="message-circle"></i></div>
-                <div>
-                    <strong>Notifikasi & Pesan Terbaru</strong>
-                    <p>Menunggu tanggapan Anda</p>
-                </div>
-                <i data-lucide="chevron-right"></i>
-            </a>
+
         </div>
     </div>
 </section>

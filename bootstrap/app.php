@@ -18,7 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
-        $middleware->alias(['role' => RequireRole::class, 'permission' => RequirePermission::class, 'api.token' => RequireApiToken::class]);
+        $middleware->alias([
+            'role' => RequireRole::class,
+            'permission' => RequirePermission::class,
+            'api.token' => RequireApiToken::class,
+            'auth.session' => \App\Http\Middleware\AuthSession::class,
+            'guest.session' => \App\Http\Middleware\GuestSession::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

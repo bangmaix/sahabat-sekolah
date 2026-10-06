@@ -31,7 +31,7 @@
             <form method="POST" action="{{ route('login.store') }}" class="reference-login-form">
                 @csrf
                 <label><i data-lucide="user-round"></i><input type="email" name="email" value="{{ old('email') }}" placeholder="NIS / Email / Username" required></label>
-                <label><i data-lucide="lock-keyhole"></i><input type="password" name="password" placeholder="Password" required><i class="field-action" data-lucide="eye"></i></label>
+                <label><i data-lucide="lock-keyhole"></i><input type="password" id="password" name="password" placeholder="Password" required><span class="field-action" id="togglePassword" style="cursor: pointer; z-index: 10;"><i data-lucide="eye" id="eyeIcon"></i><i data-lucide="eye-off" id="eyeOffIcon" style="display: none;"></i></span></label>
                 <div class="login-options"><label class="remember"><input type="checkbox" name="remember"> <span>Ingat saya</span></label><a href="{{ route('reports.create') }}">Lupa password?</a></div>
                 <button class="reference-submit" type="submit">Masuk</button>
             </form>
@@ -41,6 +41,26 @@
         </div>
     </section>
 </div>
-<script>lucide.createIcons();</script>
+<script>
+    lucide.createIcons();
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeOffIcon = document.getElementById('eyeOffIcon');
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function (e) {
+            e.preventDefault();
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            if (type === 'text') {
+                eyeIcon.style.display = 'none';
+                eyeOffIcon.style.display = 'block';
+            } else {
+                eyeIcon.style.display = 'block';
+                eyeOffIcon.style.display = 'none';
+            }
+        });
+    }
+</script>
 </body>
 </html>

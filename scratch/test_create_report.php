@@ -11,7 +11,7 @@ $kernel->bootstrap();
 
 echo "=== TESTING FORM PEMBUATAN LAPORAN ===\n";
 
-$school = DB::table('schools')->first();
+$school_npsn = '10307412';
 $category = DB::table('bullying_categories')->first();
 
 // Test Case 1: Form valid (Mode Rahasia dengan Nama Pelapor)
@@ -21,7 +21,7 @@ $token = $session->token();
 
 $reqDataValid = [
     '_token' => $token,
-    'school_id' => $school->id,
+    'school_npsn' => $school_npsn,
     'reporter_role' => 'VICTIM',
     'identity_mode' => 'CONFIDENTIAL',
     'reporter_name' => 'Ahmad Siswa Test',
@@ -43,7 +43,7 @@ $token2 = $session2->token();
 
 $reqDataAnon = [
     '_token' => $token2,
-    'school_id' => $school->id,
+    'school_npsn' => $school_npsn,
     'reporter_role' => 'WITNESS',
     'identity_mode' => 'ANONYMOUS',
     'category' => $category->name,
