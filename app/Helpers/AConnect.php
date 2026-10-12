@@ -41,7 +41,11 @@ class AConnect
 
     public function getDataSekolah()
     {
-        return $this->client()->get('/v1/data-sekolah')->json() ?? [];
+        try {
+            return $this->client()->timeout(5)->get('/v1/data-sekolah')->json() ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**

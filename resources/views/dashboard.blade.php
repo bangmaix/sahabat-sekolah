@@ -6,6 +6,30 @@
 ])
 
 @section('content')
+@if (!empty($slaAlertSummary) && $slaAlertSummary['total'] > 0)
+    <div class="sla-strip-banner">
+        <div class="sla-strip-left">
+            <div class="sla-strip-pulse"><i data-lucide="bell-ring"></i></div>
+            <div>
+                <strong>Peringatan Respons SLA: {{ $slaAlertSummary['total'] }} Laporan Siswa Menunggu Tindakan</strong>
+                <p>
+                    @if ($slaAlertSummary['overdue'] > 0)
+                        <span class="sla-highlight-overdue">{{ $slaAlertSummary['overdue'] }} Overdue (Terlewat)</span>
+                    @endif
+                    @if ($slaAlertSummary['overdue'] > 0 && $slaAlertSummary['near_overdue'] > 0) &bull; @endif
+                    @if ($slaAlertSummary['near_overdue'] > 0)
+                        <span class="sla-highlight-warning">{{ $slaAlertSummary['near_overdue'] }} Mendekati Batas (< 6 Jam)</span>
+                    @endif
+                    &mdash; Segera buka laporan untuk memberikan respons awal kepada siswa.
+                </p>
+            </div>
+        </div>
+        <button type="button" class="sla-strip-btn" onclick="openSlaModal()">
+            <i data-lucide="alert-triangle"></i> Buka Popup Peringatan
+        </button>
+    </div>
+@endif
+
 <section class="hero-strip">
     <div>
         <span class="pill">RUANG AMAN SEKOLAH</span>
@@ -45,12 +69,19 @@
             <small><em>{{ $stats['highRiskNewThisWeek'] }} baru</em> minggu ini</small>
         </div>
     </div>
-    <div class="stat-card pink">
+    <div class="stat-card pink {{ !empty($slaAlertSummary['total']) && $slaAlertSummary['total'] > 0 ? 'is-clickable' : '' }}"
+        @if(!empty($slaAlertSummary['total']) && $slaAlertSummary['total'] > 0) onclick="openSlaModal()" title="Klik untuk membuka popup peringatan SLA" @endif>
         <div class="stat-icon"><i data-lucide="clock-3"></i></div>
         <div>
             <span>SLA Overdue</span>
             <strong>{{ $stats['overdue'] }}</strong>
-            <small><em>Perlu segera</em> ditindaklanjuti</small>
+            <small>
+                @if(!empty($slaAlertSummary['total']) && $slaAlertSummary['total'] > 0)
+                    <em>Klik buka popup ({{ $slaAlertSummary['total'] }})</em>
+                @else
+                    <em>Perlu segera</em> ditindaklanjuti
+                @endif
+            </small>
         </div>
     </div>
 </section>
@@ -204,14 +235,25 @@
             </div>
         </div>
         <div class="alert-list">
-            <a class="alert-item" href="{{ route('reports.inbox', ['sla_status' => 'OVERDUE']) }}">
-                <div class="alert-badge red-bg"><i data-lucide="clock-3"></i></div>
-                <div>
-                    <strong>{{ $stats['overdue'] }} laporan melewati SLA</strong>
-                    <p>Segera berikan respons awal</p>
-                </div>
-                <i data-lucide="chevron-right"></i>
-            </a>
+            @if (!empty($slaAlertSummary) && $slaAlertSummary['total'] > 0)
+                <a class="alert-item" href="javascript:void(0)" onclick="openSlaModal()" title="Buka popup laporan SLA">
+                    <div class="alert-badge red-bg"><i data-lucide="clock-3"></i></div>
+                    <div>
+                        <strong>{{ $slaAlertSummary['total'] }} laporan butuh respons segera</strong>
+                        <p>{{ $slaAlertSummary['overdue'] }} overdue, {{ $slaAlertSummary['near_overdue'] }} mendekati batas waktu</p>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </a>
+            @else
+                <a class="alert-item" href="{{ route('reports.inbox', ['sla_status' => 'OVERDUE']) }}">
+                    <div class="alert-badge red-bg"><i data-lucide="clock-3"></i></div>
+                    <div>
+                        <strong>{{ $stats['overdue'] }} laporan melewati SLA</strong>
+                        <p>Segera berikan respons awal</p>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </a>
+            @endif
             <a class="alert-item" href="{{ route('reports.inbox', ['risk_level' => 'HIGH']) }}">
                 <div class="alert-badge orange-bg"><i data-lucide="shield-alert"></i></div>
                 <div>
@@ -220,8 +262,134 @@
                 </div>
                 <i data-lucide="chevron-right"></i>
             </a>
-
         </div>
     </div>
 </section>
+
+{{-- SLA Alert Modal Partial --}}
+@include('partials.sla-alert-modal')
+
+<style>
+    .sla-strip-banner {
+        background: linear-gradient(135deg, #fff5f5 0%, #fff9eb 100%);
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.08);
+        animation: slaBannerSlide 0.3s ease-out;
+    }
+
+    @keyframes slaBannerSlide {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sla-strip-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .sla-strip-pulse {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #fee2e2;
+        color: #dc2626;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+
+    .sla-strip-pulse svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .sla-strip-left strong {
+        display: block;
+        font: 800 13px 'Plus Jakarta Sans', sans-serif;
+        color: #991b1b;
+        margin-bottom: 3px;
+    }
+
+    .sla-strip-left p {
+        margin: 0;
+        font-size: 11px;
+        color: #7f1d1d;
+        line-height: 1.4;
+    }
+
+    .sla-highlight-overdue {
+        font-weight: 700;
+        color: #b91c1c;
+        background: #fecaca;
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .sla-highlight-warning {
+        font-weight: 700;
+        color: #b45309;
+        background: #fef3c7;
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .sla-strip-btn {
+        background: #dc2626;
+        color: #ffffff;
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font: 700 11px 'DM Sans', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+        transition: all 0.15s ease;
+    }
+
+    .sla-strip-btn:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(220, 38, 38, 0.35);
+    }
+
+    .sla-strip-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .stat-card.pink.is-clickable {
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+
+    .stat-card.pink.is-clickable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(239, 107, 112, 0.15);
+        border-color: #fca5a5;
+    }
+
+    @media (max-width: 768px) {
+        .sla-strip-banner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .sla-strip-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
 @endsection
