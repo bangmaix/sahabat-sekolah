@@ -17,6 +17,7 @@ class GuestSession
                 'PRINCIPAL' => route('principal.index'),
                 default => route('dashboard'),
             };
+
             return redirect($destination);
         }
 

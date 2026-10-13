@@ -5,49 +5,58 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: sahabat-sekolah-app
-    container_name: sahabat-sekolah-app
+    container_name: sahabat_app
     restart: unless-stopped
-    working_dir: /var/www/html
     volumes:
-      - ./:/var/www/html
+      - shared_public:/var/www/html/public_shared
+      - env_data:/var/www/html/env_data
+      - app_storage:/var/www/html/storage
     networks:
       - sahabat-network
+    depends_on:
+      - db
 
   web:
-    image: nginx:alpine
-    container_name: sahabat-sekolah-web
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: sahabat_web
     restart: unless-stopped
     ports:
       - "8209:80"
     volumes:
-      - ./:/var/www/html
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - shared_public:/var/www/html/public
+      - app_storage:/var/www/html/storage
     networks:
       - sahabat-network
+    depends_on:
+      - app
 
   db:
     image: postgres:15-alpine
-    container_name: sahabat-sekolah-db
+    container_name: sahabat_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_DATABASE:-sahabat_sekolah}
       POSTGRES_USER: ${DB_USERNAME:-sahabat_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_password}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1q2w3e4r5tzaq}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     networks:
       - sahabat-network
+    # Port tidak diexpose ke host (internal only)
+    # ports:
+    #   - "5432:5432"
 
 networks:
   sahabat-network:
     driver: bridge
     ipam:
-      driver: default
       config:
         - subnet: 192.169.91.0/24
 
 volumes:
-  db-data:
+  pgdata:
+  shared_public:
+  env_data:
+  app_storage:

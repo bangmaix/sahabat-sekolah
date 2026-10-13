@@ -32,7 +32,7 @@
                 </div>
             </section>
 
-            <form class="report-form" method="POST" action="{{ route('reports.store') }}">
+            <form class="report-form" method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="form-heading">
                     <div>
@@ -162,6 +162,19 @@
                         placeholder="Tuliskan apa yang terjadi, kapan, dan di mana. Ceritakan fakta yang Anda lihat atau alami.">{{ old('description') }}</textarea>
                     <small>Minimal 20 karakter. Ceritakan fakta yang Anda lihat atau alami.</small>
                 </label>
+
+                <div class="flex flex-col gap-1 mb-6">
+                    <label class="text-sm font-semibold text-gray-700" style="margin-bottom: 4px;">Bukti / Dokumen Pendukung (Opsional)</label>
+                    <input type="file" name="evidences[]" multiple accept="image/*,application/pdf"
+                        class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" style="font-size: 14px;">
+                    <small class="text-xs text-gray-500 mt-1">Bisa upload hingga 5 file (Gambar atau PDF). Maksimal 2MB per file.</small>
+                    @error('evidences')
+                        <small class="text-xs text-red-500">{{ $message }}</small>
+                    @enderror
+                    @error('evidences.*')
+                        <small class="text-xs text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
                 <button class="primary-button" type="submit">Kirim laporan <i data-lucide="arrow-right"></i></button>
             </form>

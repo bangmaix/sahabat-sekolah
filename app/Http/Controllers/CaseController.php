@@ -2,26 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AConnect;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class CaseController extends Controller
 {
     public function show(string $caseNumber)
     {
-        $schoolsMap = (new AConnect)->getSekolahMap();
         $case = DB::table('cases')
             ->join('reports', 'cases.report_id', '=', 'reports.id')
             ->leftJoin('case_slas', 'cases.id', '=', 'case_slas.case_id')
             ->where('cases.case_number', $caseNumber)
             ->where('cases.school_npsn', session('school_npsn'))
             ->leftJoin('reporter_identities', 'reports.id', '=', 'reporter_identities.report_id')
-            ->select('cases.*', 'reports.reporter_role', 'reports.identity_mode', 'reports.description', 'reports.submitted_at', 'reporter_identities.full_name as reporter_name', 'reporter_identities.contact as reporter_contact', 'reporter_identities.access_level as reporter_access_level', 'case_slas.status as sla_status', 'case_slas.response_deadline')
+            ->leftJoin('students', 'reporter_identities.student_id', '=', 'students.id')
+            ->select('cases.*', 'reports.reporter_role', 'reports.identity_mode', 'reports.description', 'reports.submitted_at', 'reporter_identities.full_name as reporter_name', 'reporter_identities.contact as reporter_contact', 'reporter_identities.access_level as reporter_access_level', 'students.class_name as reporter_class', 'students.student_number as reporter_student_number', 'case_slas.status as sla_status', 'case_slas.response_deadline')
             ->firstOrFail();
 
-        $case->school_name = $schoolsMap[$case->school_npsn] ?? '-';
+        $schoolName = DB::table('users')->where('school_npsn', $case->school_npsn)->value('school_name');
+        $case->school_name = $schoolName ?? '-';
+
+        // Evaluate SLA dynamically for display if SLA scan hasn't run yet
+        if ($case->status === 'PENDING_RESPONSE' && $case->sla_status !== 'OVERDUE' && $case->response_deadline && Carbon::parse($case->response_deadline)->isPast()) {
+            $case->sla_status = 'OVERDUE';
+        } elseif (in_array($case->status, ['UNDER_VERIFICATION', 'IN_HANDLING'])) {
+            $resolutionDeadline = DB::table('case_slas')->where('case_id', $case->id)->value('resolution_deadline');
+            if ($case->sla_status !== 'OVERDUE' && $resolutionDeadline && Carbon::parse($resolutionDeadline)->isPast()) {
+                $case->sla_status = 'OVERDUE';
+            }
+        }
 
         DB::table('case_access_logs')->insert([
             'user_id' => session('user_id'), 'user_name' => session('user_name'), 'case_id' => $case->id,
@@ -168,6 +180,22 @@ class CaseController extends Controller
                 'created_at' => $now, 'updated_at' => $now,
             ]);
             DB::table('cases')->where('id', $case->id)->update(['risk_level' => $risk, 'updated_at' => $now]);
+
+            if ($case->risk_level !== $risk) {
+                $config = DB::table('sla_configurations')->where('risk_level', $risk)->first();
+                $responseHours = $config ? $config->response_time_hours : 24;
+                $resolutionDays = $config ? $config->resolution_time_days : 14;
+
+                $slaUpdate = ['updated_at' => $now];
+                if ($case->status === 'PENDING_RESPONSE') {
+                    $slaUpdate['response_deadline'] = Carbon::parse($case->opened_at)->addHours($responseHours);
+                } else {
+                    $initialResponse = DB::table('case_slas')->where('case_id', $case->id)->value('initial_response_at') ?? $now;
+                    $slaUpdate['resolution_deadline'] = Carbon::parse($initialResponse)->addDays($resolutionDays);
+                }
+                DB::table('case_slas')->where('case_id', $case->id)->update($slaUpdate);
+            }
+
             auditAction('ASSESS_RISK', 'CASE', $case->case_number, ['risk_level' => $risk, 'score' => $score]);
             notifyCounselor('RISK_ASSESSED', 'Penilaian risiko tersimpan', $case->case_number.' memiliki level risiko '.$risk.' dengan skor '.$score.'.', $case->case_number, in_array($risk, ['HIGH', 'CRITICAL'], true) ? 'URGENT' : 'NORMAL');
         });
@@ -212,16 +240,54 @@ class CaseController extends Controller
         $table = $documentType === 'evidence' ? 'case_evidences' : 'case_resolution_documents';
         $document = DB::table($table)->where('id', $id)->where('case_id', $case->id)->firstOrFail();
 
-        abort_unless(Storage::disk('local')->exists($document->file_path), 404, 'File tidak ditemukan.');
+        $disk = 'local';
+        if (! Storage::disk($disk)->exists($document->file_path)) {
+            if (Storage::disk('public')->exists($document->file_path)) {
+                $disk = 'public';
+            } else {
+                abort(404, 'File tidak ditemukan.');
+            }
+        }
 
         auditAction('DOWNLOAD_DOCUMENT', 'CASE', $case->case_number, ['document_id' => $id, 'document_type' => $documentType]);
         DB::table('case_access_logs')->insert([
             'user_id' => session('user_id'), 'user_name' => session('user_name'), 'case_id' => $case->id,
-            'action' => 'DOWNLOAD_DOCUMENT', 'access_level' => 'CASE_SENSITIVE', 'reason' => 'Dokumen kasus diunduh',
+            'action' => 'DOWNLOAD_DOCUMENT', 'access_level' => 'CASE_SENSITIVE', 'reason' => 'Dokumen kasus dilihat',
             'ip_address' => request()->ip(), 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        return Storage::disk('local')->download($document->file_path, $document->file_name);
+        return Storage::disk($disk)->response($document->file_path, $document->file_name);
+    }
+
+    public function printReport(string $caseNumber)
+    {
+        $baseCase = scopedCase($caseNumber);
+
+        abort_unless(in_array($baseCase->status, ['RESOLVED', 'CLOSED']), 403, 'Hanya kasus yang sudah selesai yang dapat dicetak.');
+
+        $case = DB::table('cases')
+            ->join('reports', 'cases.report_id', '=', 'reports.id')
+            ->leftJoin('reporter_identities', 'reports.id', '=', 'reporter_identities.report_id')
+            ->leftJoin('case_slas', 'cases.id', '=', 'case_slas.case_id')
+            ->where('cases.id', $baseCase->id)
+            ->select('cases.*', 'reports.reporter_role', 'reports.identity_mode', 'reports.description', 'reports.submitted_at', 'reporter_identities.full_name as reporter_name', 'reporter_identities.contact as reporter_contact', 'reporter_identities.access_level as reporter_access_level', 'case_slas.status as sla_status', 'case_slas.response_deadline')
+            ->first();
+
+        $schoolName = DB::table('users')->where('school_npsn', $case->school_npsn)->value('school_name');
+        $case->school_name = $schoolName ?? '-';
+
+        $participants = DB::table('case_participants')->where('case_id', $case->id)->get();
+        $history = DB::table('case_status_histories')->where('case_id', $case->id)->orderBy('created_at', 'asc')->get();
+        $actions = DB::table('case_access_logs')->where('case_id', $case->id)->orderBy('created_at', 'asc')->get();
+        $notes = DB::table('case_notes')->where('case_id', $case->id)->orderBy('created_at', 'asc')->get();
+
+        DB::table('case_access_logs')->insert([
+            'user_id' => session('user_id'), 'user_name' => session('user_name'), 'case_id' => $case->id,
+            'action' => 'PRINT_REPORT', 'access_level' => 'CASE_FULL', 'reason' => 'Mencetak laporan kasus',
+            'ip_address' => request()->ip(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return view('cases.print', compact('case', 'participants', 'history', 'actions', 'notes'));
     }
 
     public function updateStatus(Request $request, string $caseNumber)
@@ -242,18 +308,27 @@ class CaseController extends Controller
         abort_unless(in_array($data['status'], $allowed[$case->status] ?? [], true), 422, 'Transisi status tidak diizinkan.');
 
         if ($data['status'] === 'CLOSED') {
-            if (!DB::table('case_resolution_documents')->where('case_id', $case->id)->where('verification_status', 'VALID')->exists()) {
-                return back()->with('error', 'Kasus tidak dapat ditutup karena belum memiliki dokumen penyelesaian yang valid.');
-            }
+            abort_unless(
+                DB::table('case_resolution_documents')->where('case_id', $case->id)->where('verification_status', 'VALID')->exists(),
+                422,
+                'Kasus tidak dapat ditutup karena belum memiliki dokumen penyelesaian yang valid.'
+            );
         }
 
         DB::transaction(function () use ($case, $data) {
             $now = now();
 
-            DB::table('cases')->where('id', $case->id)->update([
+            $caseUpdate = [
                 'status' => $data['status'],
                 'updated_at' => $now,
-            ]);
+            ];
+            if ($data['status'] === 'RESOLVED') {
+                $caseUpdate['resolved_at'] = $now;
+            } elseif ($data['status'] === 'CLOSED') {
+                $caseUpdate['closed_at'] = $now;
+            }
+
+            DB::table('cases')->where('id', $case->id)->update($caseUpdate);
 
             DB::table('case_status_histories')->insert([
                 'case_id' => $case->id, 'old_status' => $case->status, 'new_status' => $data['status'],
@@ -273,8 +348,8 @@ class CaseController extends Controller
                 $resolutionDays = $config ? $config->resolution_time_days : 14;
 
                 DB::table('case_slas')->where('case_id', $case->id)->update([
-                    'status' => 'COMPLETED', 
-                    'initial_response_at' => $now, 
+                    'status' => 'COMPLETED',
+                    'initial_response_at' => $now,
                     'resolution_status' => 'ON_TIME',
                     'resolution_deadline' => $now->copy()->addDays($resolutionDays),
                     'updated_at' => $now,
@@ -294,5 +369,166 @@ class CaseController extends Controller
         });
 
         return back()->with('success', 'Status kasus berhasil diperbarui.');
+    }
+
+    public function processAction(Request $request, string $caseNumber)
+    {
+        $data = $request->validate([
+            'status' => ['nullable', 'in:UNDER_VERIFICATION,IN_HANDLING,RESOLVED,CLOSED'],
+            'status_reason' => ['nullable', 'string', 'max:500'],
+            'note_type' => ['nullable', 'in:VERIFICATION,HANDLING,COUNSELING,FOLLOW_UP,INTERNAL', 'required_with:note_content'],
+            'note_content' => ['nullable', 'string', 'min:5', 'max:2000', 'required_with:note_type'],
+            'document_type' => ['nullable', 'in:EVIDENCE,RESOLUTION', 'required_with:document_file'],
+            'document_file' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,mp4,mov,mp3,wav', 'required_with:document_type'],
+        ]);
+
+        $case = scopedCase($caseNumber);
+        $now = now();
+        $messages = [];
+
+        DB::transaction(function () use ($case, $data, $now, &$messages, $request) {
+            // 1. Update Status
+            if (! empty($data['status'])) {
+                $allowed = [
+                    'PENDING_RESPONSE' => ['UNDER_VERIFICATION'],
+                    'UNDER_VERIFICATION' => ['IN_HANDLING', 'RESOLVED'],
+                    'IN_HANDLING' => ['RESOLVED'],
+                    'RESOLVED' => ['CLOSED'],
+                ];
+
+                if (in_array($data['status'], $allowed[$case->status] ?? [], true)) {
+                    // Check resolution document if closing
+                    if ($data['status'] === 'CLOSED') {
+                        $hasDoc = DB::table('case_resolution_documents')->where('case_id', $case->id)->where('verification_status', 'VALID')->exists();
+                        $uploadingResolution = ! empty($data['document_file']) && $data['document_type'] === 'RESOLUTION';
+
+                        if (! $hasDoc && ! $uploadingResolution) {
+                            throw ValidationException::withMessages(['status' => 'Kasus tidak dapat ditutup karena belum memiliki dokumen penyelesaian yang valid.']);
+                        }
+                    }
+
+                    $caseUpdate = [
+                        'status' => $data['status'],
+                        'updated_at' => $now,
+                    ];
+                    if ($data['status'] === 'RESOLVED') {
+                        $caseUpdate['resolved_at'] = $now;
+                    } elseif ($data['status'] === 'CLOSED') {
+                        $caseUpdate['closed_at'] = $now;
+                    }
+
+                    DB::table('cases')->where('id', $case->id)->update($caseUpdate);
+
+                    DB::table('case_status_histories')->insert([
+                        'case_id' => $case->id, 'old_status' => $case->status, 'new_status' => $data['status'],
+                        'reason' => $data['status_reason'] ?? null, 'changed_by' => 'Bu Ratna Sari',
+                        'created_at' => $now, 'updated_at' => $now,
+                    ]);
+
+                    DB::table('case_actions')->insert([
+                        'case_id' => $case->id,
+                        'action_type' => $data['status'] === 'UNDER_VERIFICATION' ? 'VERIFICATION' : ($data['status'] === 'IN_HANDLING' ? 'HANDLING' : 'RESOLUTION'),
+                        'description' => $data['status_reason'] ?: 'Status kasus diperbarui menjadi '.str_replace('_', ' ', $data['status']),
+                        'performed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                    ]);
+
+                    if ($case->status === 'PENDING_RESPONSE') {
+                        $config = DB::table('sla_configurations')->where('risk_level', $case->risk_level)->first();
+                        $resolutionDays = $config ? $config->resolution_time_days : 14;
+
+                        DB::table('case_slas')->where('case_id', $case->id)->update([
+                            'status' => 'COMPLETED',
+                            'initial_response_at' => $now,
+                            'resolution_status' => 'ON_TIME',
+                            'resolution_deadline' => $now->copy()->addDays($resolutionDays),
+                            'updated_at' => $now,
+                        ]);
+                    }
+
+                    if (in_array($data['status'], ['RESOLVED', 'CLOSED'])) {
+                        DB::table('case_slas')->where('case_id', $case->id)->update([
+                            'resolution_status' => 'COMPLETED',
+                            'resolved_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
+
+                    notifyCounselor('STATUS_CHANGED', 'Status kasus diperbarui', $case->case_number.' sekarang '.str_replace('_', ' ', $data['status']).'.', $case->case_number, 'HIGH');
+                    auditAction('CHANGE_STATUS', 'CASE', $case->case_number, ['status' => $data['status']], ['status' => $case->status]);
+                    $messages[] = 'Status berhasil diperbarui.';
+                }
+            } elseif ($case->status === 'PENDING_RESPONSE' && (! empty($data['note_content']) || ! empty($data['document_file']))) {
+                // Counselor responded by adding a note or document without explicitly picking status dropdown
+                DB::table('cases')->where('id', $case->id)->update([
+                    'status' => 'UNDER_VERIFICATION',
+                    'updated_at' => $now,
+                ]);
+
+                DB::table('case_status_histories')->insert([
+                    'case_id' => $case->id, 'old_status' => 'PENDING_RESPONSE', 'new_status' => 'UNDER_VERIFICATION',
+                    'reason' => 'Respons awal diberikan oleh Guru BK melalui catatan/dokumen', 'changed_by' => 'Bu Ratna Sari',
+                    'created_at' => $now, 'updated_at' => $now,
+                ]);
+
+                DB::table('case_actions')->insert([
+                    'case_id' => $case->id,
+                    'action_type' => 'VERIFICATION',
+                    'description' => 'Respons awal dicatat dalam penanganan kasus',
+                    'performed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                ]);
+
+                $config = DB::table('sla_configurations')->where('risk_level', $case->risk_level)->first();
+                $resolutionDays = $config ? $config->resolution_time_days : 14;
+
+                DB::table('case_slas')->where('case_id', $case->id)->update([
+                    'status' => 'COMPLETED',
+                    'initial_response_at' => $now,
+                    'resolution_status' => 'ON_TIME',
+                    'resolution_deadline' => $now->copy()->addDays($resolutionDays),
+                    'updated_at' => $now,
+                ]);
+
+                $messages[] = 'Respons awal berhasil dicatat dan status masuk ke Verifikasi.';
+            }
+
+            // 2. Add Note
+            if (! empty($data['note_content']) && ! empty($data['note_type'])) {
+                DB::table('case_notes')->insert([
+                    'case_id' => $case->id, 'note_type' => $data['note_type'], 'content' => $data['note_content'],
+                    'visibility' => 'PRIVATE_BK', 'created_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                ]);
+
+                auditAction('CREATE_NOTE', 'CASE', $case->case_number, ['note_type' => $data['note_type']]);
+                notifyCounselor('NOTE_ADDED', 'Catatan kasus ditambahkan', 'Catatan '.strtolower($data['note_type']).' ditambahkan ke '.$case->case_number.'.', $case->case_number);
+                $messages[] = 'Catatan berhasil disimpan.';
+            }
+
+            // 3. Upload Document
+            if ($request->hasFile('document_file') && ! empty($data['document_type'])) {
+                $file = $request->file('document_file');
+                $path = $file->store('case-documents', 'local');
+
+                $payload = [
+                    'case_id' => $case->id, 'file_name' => $file->getClientOriginalName(), 'file_path' => $path,
+                    'uploaded_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                ];
+
+                if ($data['document_type'] === 'RESOLUTION') {
+                    DB::table('case_resolution_documents')->insert($payload + ['verification_status' => 'VALID']);
+                } else {
+                    DB::table('case_evidences')->insert($payload + ['mime_type' => $file->getMimeType(), 'file_size' => $file->getSize()]);
+                }
+
+                auditAction('UPLOAD_DOCUMENT', 'CASE', $case->case_number, ['file_name' => $file->getClientOriginalName(), 'document_type' => $data['document_type']]);
+                notifyCounselor('DOCUMENT_UPLOADED', 'Dokumen kasus diunggah', $file->getClientOriginalName().' ditambahkan ke '.$case->case_number.'.', $case->case_number);
+                $messages[] = 'Dokumen berhasil diunggah.';
+            }
+        });
+
+        if (empty($messages)) {
+            return back()->with('info', 'Tidak ada tindakan yang dilakukan.');
+        }
+
+        return back()->with('success', implode(' ', $messages));
     }
 }

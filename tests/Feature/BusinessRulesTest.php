@@ -12,7 +12,9 @@ class BusinessRulesTest extends TestCase
     use RefreshDatabase;
 
     private string $schoolNpsn = '10307412';
+
     private string $otherSchoolNpsn = '10307415';
+
     private string $caseNumber = 'SS-TEST-000001';
 
     protected function setUp(): void
@@ -38,14 +40,14 @@ class BusinessRulesTest extends TestCase
 
     public function test_invalid_case_transition_is_rejected(): void
     {
-        $response = $this->withSession($this->counselorSession())->post('/cases/' . $this->caseNumber . '/status', ['status' => 'CLOSED']);
+        $response = $this->withSession($this->counselorSession())->post('/cases/'.$this->caseNumber.'/status', ['status' => 'CLOSED']);
         $response->assertStatus(422);
     }
 
     public function test_case_cannot_close_without_valid_resolution_document(): void
     {
         DB::table('cases')->where('case_number', $this->caseNumber)->update(['status' => 'RESOLVED']);
-        $response = $this->withSession($this->counselorSession())->post('/cases/' . $this->caseNumber . '/status', ['status' => 'CLOSED']);
+        $response = $this->withSession($this->counselorSession())->post('/cases/'.$this->caseNumber.'/status', ['status' => 'CLOSED']);
         $response->assertStatus(422);
     }
 

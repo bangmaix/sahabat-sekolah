@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Kuroragi\GeneralHelper\Traits\Blameable;
 use Illuminate\Support\Facades\Auth;
+use Kuroragi\GeneralHelper\Traits\Blameable;
 
 class SlaConfiguration extends Model
 {
-    use SoftDeletes, Blameable;
+    use Blameable, SoftDeletes;
 
     protected $fillable = [
         'risk_level',

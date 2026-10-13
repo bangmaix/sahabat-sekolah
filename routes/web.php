@@ -145,11 +145,16 @@ Route::middleware('auth.session')->group(function () {
             ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:CASE_VIEW'])
             ->name('cases.show');
 
+        Route::get('/{caseNumber}/print', [CaseController::class, 'printReport'])
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:CASE_VIEW'])
+            ->name('cases.print');
+
         // Update endpoints (Counselor only)
         Route::middleware(['role:COUNSELOR', 'permission:CASE_UPDATE'])->group(function () {
             Route::post('/{caseNumber}/parent-involvement', [CaseController::class, 'updateParentInvolvement'])->name('cases.parent-involvement');
             Route::post('/{caseNumber}/participants', [CaseController::class, 'addParticipant'])->name('cases.participants');
             Route::post('/{caseNumber}/status', [CaseController::class, 'updateStatus'])->name('cases.status');
+            Route::post('/{caseNumber}/action', [CaseController::class, 'processAction'])->name('cases.action');
         });
 
         // Escalate

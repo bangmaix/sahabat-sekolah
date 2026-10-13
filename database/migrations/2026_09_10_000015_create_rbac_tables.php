@@ -49,8 +49,12 @@ return new class extends Migration
         $permissionIds = DB::table('permissions')->pluck('id', 'code');
         $counselor = ['REPORT_VIEW', 'CASE_VIEW', 'CASE_UPDATE', 'CASE_NOTE_CREATE', 'RISK_ASSESS', 'EVIDENCE_UPLOAD', 'CASE_ESCALATE', 'NOTIFICATION_VIEW'];
         $principal = ['REPORT_VIEW', 'CASE_VIEW', 'NOTIFICATION_VIEW', 'MONITORING_VIEW'];
-        foreach ($counselor as $code) DB::table('role_permissions')->insert(['role_id' => $roles['COUNSELOR'], 'permission_id' => $permissionIds[$code]]);
-        foreach ($principal as $code) DB::table('role_permissions')->insert(['role_id' => $roles['PRINCIPAL'], 'permission_id' => $permissionIds[$code]]);
+        foreach ($counselor as $code) {
+            DB::table('role_permissions')->insert(['role_id' => $roles['COUNSELOR'], 'permission_id' => $permissionIds[$code]]);
+        }
+        foreach ($principal as $code) {
+            DB::table('role_permissions')->insert(['role_id' => $roles['PRINCIPAL'], 'permission_id' => $permissionIds[$code]]);
+        }
     }
 
     public function down(): void

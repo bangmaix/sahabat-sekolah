@@ -100,7 +100,13 @@ class AdminController extends Controller
             'school_npsn' => ['nullable', 'string'],
         ]);
 
-        DB::table('users')->insert($data + ['password' => Hash::make('password'), 'created_at' => now(), 'updated_at' => now()]);
+        $schoolName = null;
+        if (! empty($data['school_npsn'])) {
+            $schoolsMap = (new AConnect)->getSekolahMap();
+            $schoolName = $schoolsMap[$data['school_npsn']] ?? null;
+        }
+
+        DB::table('users')->insert($data + ['school_name' => $schoolName, 'password' => Hash::make('password'), 'created_at' => now(), 'updated_at' => now()]);
         auditAction('CREATE_USER', 'USER', $data['email'], ['role' => $data['role'], 'school_npsn' => $data['school_npsn']]);
 
         return back()->with('success', 'Pengguna berhasil dibuat. Password awal: password.');
@@ -115,7 +121,13 @@ class AdminController extends Controller
             'status' => ['required', 'in:ACTIVE,INACTIVE'],
         ]);
 
-        DB::table('users')->where('id', $id)->update($data + ['updated_at' => now()]);
+        $schoolName = null;
+        if (! empty($data['school_npsn'])) {
+            $schoolsMap = (new AConnect)->getSekolahMap();
+            $schoolName = $schoolsMap[$data['school_npsn']] ?? null;
+        }
+
+        DB::table('users')->where('id', $id)->update($data + ['school_name' => $schoolName, 'updated_at' => now()]);
         auditAction('UPDATE_USER', 'USER', $id, $data);
 
         return back()->with('success', 'Pengguna berhasil diperbarui.');
@@ -188,6 +200,7 @@ class AdminController extends Controller
     public function slaConfigurations()
     {
         $configs = DB::table('sla_configurations')->orderByRaw("CASE risk_level WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'MEDIUM' THEN 3 WHEN 'LOW' THEN 4 END")->get();
+
         return view('admin.sla-configurations', compact('configs'));
     }
 

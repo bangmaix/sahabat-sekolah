@@ -18,6 +18,7 @@ class RequireApiToken
         }
         $request->attributes->set('api_user', DB::table('users')->where('id', $token->user_id)->first());
         DB::table('api_tokens')->where('id', $token->id)->update(['last_used_at' => now()]);
+
         return $next($request);
     }
 }

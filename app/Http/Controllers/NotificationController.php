@@ -10,7 +10,7 @@ class NotificationController extends Controller
     {
         $notification = DB::table('notifications')->where('id', $id)->first();
 
-        if (!$notification) {
+        if (! $notification) {
             return back();
         }
 

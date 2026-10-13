@@ -51,11 +51,19 @@ class ReportController extends Controller
             if ($sla === 'COMPLETED') {
                 $query->where(function ($q) {
                     $q->whereIn('cases.status', ['RESOLVED', 'CLOSED'])
-                      ->orWhere('case_slas.resolution_status', 'COMPLETED');
+                        ->orWhere('case_slas.resolution_status', 'COMPLETED')
+                        ->orWhere('case_slas.status', 'COMPLETED');
                 });
             } else {
-                $query->where('cases.status', '!=', 'PENDING_RESPONSE')
-                      ->where('case_slas.resolution_status', $sla);
+                $query->where(function ($q) use ($sla) {
+                    $q->where(function ($sub) use ($sla) {
+                        $sub->where('cases.status', 'PENDING_RESPONSE')
+                            ->where('case_slas.status', $sla);
+                    })->orWhere(function ($sub) use ($sla) {
+                        $sub->where('cases.status', '!=', 'PENDING_RESPONSE')
+                            ->where('case_slas.resolution_status', $sla);
+                    });
+                });
             }
         }
 
@@ -84,6 +92,8 @@ class ReportController extends Controller
             'category' => ['required', 'string', 'max:255', 'exists:bullying_categories,name'],
             'subcategory' => ['nullable', 'string', 'max:255', 'exists:bullying_subcategories,name'],
             'description' => ['required', 'string', 'min:20'],
+            'evidences' => ['nullable', 'array', 'max:5'],
+            'evidences.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ], [
             'school_npsn.required' => 'Pilih sekolah terlebih dahulu.',
             'reporter_role.required' => 'Pilih peran pelapor (Saya korban, Saya saksi, atau Saya mengetahui kejadian).',
@@ -94,11 +104,11 @@ class ReportController extends Controller
             'description.min' => 'Cerita kejadian minimal 20 karakter agar informasi laporan cukup jelas.',
         ]);
 
-        $caseNumber = DB::transaction(function () use ($data) {
+        $caseNumber = DB::transaction(function () use ($data, $request) {
             $number = 'SS-'.now()->format('Y').'-'.str_pad((string) ((DB::table('reports')->max('id') ?? 0) + 1), 6, '0', STR_PAD_LEFT);
             $now = now();
             $reportData = $data;
-            unset($reportData['reporter_name'], $reportData['reporter_contact']);
+            unset($reportData['reporter_name'], $reportData['reporter_contact'], $reportData['evidences']);
 
             $reportId = DB::table('reports')->insertGetId([
                 ...$reportData, 'report_number' => $number, 'submitted_at' => $now,
@@ -118,12 +128,12 @@ class ReportController extends Controller
             $resolutionDays = $config ? $config->resolution_time_days : 14;
 
             DB::table('case_slas')->insert([
-                'case_id' => $caseId, 
-                'status' => 'ON_TIME', 
+                'case_id' => $caseId,
+                'status' => 'ON_TIME',
                 'response_deadline' => $now->copy()->addHours($responseHours),
                 'resolution_deadline' => null, // dihitung ketika direspon
                 'resolution_status' => 'ON_TRACK',
-                'created_at' => $now, 
+                'created_at' => $now,
                 'updated_at' => $now,
             ]);
 
@@ -135,6 +145,22 @@ class ReportController extends Controller
                     'access_level' => $data['identity_mode'] === 'IDENTIFIED' ? 'CASE_FULL' : 'CASE_RESTRICTED',
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
+            }
+
+            if ($request->hasFile('evidences')) {
+                foreach ($request->file('evidences') as $file) {
+                    $path = $file->store('evidences', 'local');
+                    DB::table('case_evidences')->insert([
+                        'case_id' => $caseId,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                        'uploaded_by' => $data['reporter_name'] ?? 'Pelapor',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
             }
 
             notifyCounselor('NEW_REPORT', 'Laporan baru masuk', $number.' menunggu respons awal dalam 1 × 24 jam.', $number, 'HIGH');

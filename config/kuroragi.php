@@ -1,4 +1,5 @@
 <?php
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -18,7 +19,7 @@ return [
     'roll_time' => '01:00', // HH:MM
     'default_reader_limit' => 50,
     'auth_model' => null, // null => use config('auth.providers.users.model')
-    
+
     /*
     |--------------------------------------------------------------------------
     | Authorization Exception Handler
@@ -44,4 +45,3 @@ return [
         'json_response' => true, // handle JSON/AJAX requests
     ],
 ];
-

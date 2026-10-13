@@ -30,36 +30,36 @@ class ScanSla extends Command
             $message = null;
 
             $isResponseSla = $sla->case_status === 'PENDING_RESPONSE';
-            
+
             if ($isResponseSla) {
                 if ($sla->response_deadline <= $now && $sla->status !== 'OVERDUE') {
                     $nextStatus = 'OVERDUE';
                     $priority = 'URGENT';
                     $title = 'SLA respons terlewati';
-                    $message = $sla->case_number . ' belum menerima respons awal.';
+                    $message = $sla->case_number.' belum menerima respons awal.';
                 } elseif ($sla->response_deadline <= $warningLimit && $sla->status === 'ON_TIME') {
                     $nextStatus = 'WARNING';
                     $priority = 'HIGH';
                     $title = 'SLA mendekati batas waktu';
-                    $message = $sla->case_number . ' membutuhkan respons awal segera.';
+                    $message = $sla->case_number.' membutuhkan respons awal segera.';
                 }
             } else {
                 if ($sla->resolution_deadline && $sla->resolution_deadline <= $now && $sla->resolution_status !== 'OVERDUE') {
                     $nextStatus = 'OVERDUE';
                     $priority = 'URGENT';
                     $title = 'SLA penyelesaian terlewati';
-                    $message = $sla->case_number . ' telah melewati batas waktu penyelesaian.';
+                    $message = $sla->case_number.' telah melewati batas waktu penyelesaian.';
                 } elseif ($sla->resolution_deadline && $sla->resolution_deadline <= $warningLimit && $sla->resolution_status === 'ON_TIME') {
                     $nextStatus = 'WARNING';
                     $priority = 'HIGH';
                     $title = 'SLA penyelesaian mendekati batas waktu';
-                    $message = $sla->case_number . ' harus segera diselesaikan.';
+                    $message = $sla->case_number.' harus segera diselesaikan.';
                 }
             }
 
             if ($nextStatus) {
                 $reminderType = $nextStatus === 'OVERDUE' ? 'OVERDUE' : 'WARNING';
-                
+
                 $updateData = ['updated_at' => $now];
                 if ($isResponseSla) {
                     $updateData['status'] = $nextStatus;
@@ -77,7 +77,7 @@ class ScanSla extends Command
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
                 DB::table('notifications')->insert([
-                    'recipient_name' => 'Bu Ratna Sari', 'type' => 'SLA_' . $nextStatus,
+                    'recipient_name' => 'Bu Ratna Sari', 'type' => 'SLA_'.$nextStatus,
                     'title' => $title, 'message' => $message, 'priority' => $priority,
                     'case_number' => $sla->case_number, 'created_at' => $now, 'updated_at' => $now,
                 ]);
