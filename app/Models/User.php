@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Kuroragi\GeneralHelper\Traits\Blameable;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -16,14 +17,14 @@ use Kuroragi\GeneralHelper\Traits\Blameable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, Blameable;
+    use Blameable, HasFactory, Notifiable;
 
     /**
      * Override currentAuthId from Blameable since this app uses session-based auth.
      */
     protected static function currentAuthId()
     {
-        return session('user_id') ?: \Illuminate\Support\Facades\Auth::id();
+        return session('user_id') ?: Auth::id();
     }
 
     /**

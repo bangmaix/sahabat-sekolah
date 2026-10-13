@@ -144,7 +144,7 @@ Route::middleware('auth.session')->group(function () {
         Route::get('/{caseNumber}', [CaseController::class, 'show'])
             ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:CASE_VIEW'])
             ->name('cases.show');
-            
+
         Route::get('/{caseNumber}/print', [CaseController::class, 'printReport'])
             ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:CASE_VIEW'])
             ->name('cases.print');

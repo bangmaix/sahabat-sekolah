@@ -101,7 +101,7 @@ class AdminController extends Controller
         ]);
 
         $schoolName = null;
-        if (!empty($data['school_npsn'])) {
+        if (! empty($data['school_npsn'])) {
             $schoolsMap = (new AConnect)->getSekolahMap();
             $schoolName = $schoolsMap[$data['school_npsn']] ?? null;
         }
@@ -122,7 +122,7 @@ class AdminController extends Controller
         ]);
 
         $schoolName = null;
-        if (!empty($data['school_npsn'])) {
+        if (! empty($data['school_npsn'])) {
             $schoolsMap = (new AConnect)->getSekolahMap();
             $schoolName = $schoolsMap[$data['school_npsn']] ?? null;
         }
@@ -200,6 +200,7 @@ class AdminController extends Controller
     public function slaConfigurations()
     {
         $configs = DB::table('sla_configurations')->orderByRaw("CASE risk_level WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'MEDIUM' THEN 3 WHEN 'LOW' THEN 4 END")->get();
+
         return view('admin.sla-configurations', compact('configs'));
     }
 

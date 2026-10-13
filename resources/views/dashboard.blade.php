@@ -245,7 +245,7 @@
                     <i data-lucide="chevron-right"></i>
                 </a>
             @else
-                <a class="alert-item" href="{{ route('reports.inbox', ['sla_status' => 'OVERDUE']) }}">
+                <a class="alert-item" href="{{ route('reports.inbox', ['status' => 'PENDING_RESPONSE', 'sla_status' => 'OVERDUE']) }}">
                     <div class="alert-badge red-bg"><i data-lucide="clock-3"></i></div>
                     <div>
                         <strong>{{ $stats['overdue'] }} laporan melewati SLA</strong>

@@ -50,24 +50,53 @@ class PageController extends Controller
         $now = now();
         $warningLimit = $now->copy()->addHours(6);
 
+        // Fetch case IDs that already have any counselor actions or notes recorded
+        $interactedCaseIds = DB::table('case_actions')->pluck('case_id')
+            ->merge(DB::table('case_notes')->pluck('case_id'))
+            ->unique()
+            ->flip();
+
         $slaAlertCases = collect();
         $slaUpdates = [];
 
-        // Detect cases with unresponded reports and overdue or near-overdue response SLA
+        // STRICT FILTER: Only detect genuinely unresponded reports (PENDING_RESPONSE).
+        // Cases that have already been responded to (UNDER_VERIFICATION, IN_HANDLING)
+        // or finished (RESOLVED, CLOSED) must NEVER appear in the modal.
         foreach ($cases as $case) {
+            $isNotPending = ($case->status !== 'PENDING_RESPONSE');
             $hasInitialResponse = ! empty($case->initial_response_at) || ($case->sla_status === 'COMPLETED');
+            $isFinished = in_array($case->status, ['RESOLVED', 'CLOSED'], true)
+                || ! empty($case->resolved_at)
+                || ! empty($case->closed_at);
+            $hasInteractions = isset($interactedCaseIds[$case->id]);
+
+            // Exclude cases that are already responded, in handling, finished, or have counselor interactions
+            if ($isNotPending || $hasInitialResponse || $isFinished || $hasInteractions) {
+                // Self-healing: if an already-responded or completed case still has stale OVERDUE/WARNING in case_slas,
+                // synchronize it to COMPLETED so it doesn't pollute SLA stats.
+                if ($isNotPending && in_array($case->sla_status, ['OVERDUE', 'WARNING'], true)) {
+                    DB::table('case_slas')->where('case_id', $case->id)->update([
+                        'status' => 'COMPLETED',
+                        'initial_response_at' => $case->initial_response_at ?? ($case->opened_at ?? $now),
+                        'updated_at' => $now,
+                    ]);
+                    $case->sla_status = 'COMPLETED';
+                }
+
+                continue;
+            }
+
+            // At this point, the report is strictly unresponded (PENDING_RESPONSE with no response recorded)
             $deadline = $case->response_deadline ? Carbon::parse($case->response_deadline) : null;
             $effectiveResponseStatus = $case->sla_status ?? 'ON_TIME';
 
-            if (! $hasInitialResponse) {
-                if ($deadline && $deadline->lte($now)) {
-                    $effectiveResponseStatus = 'OVERDUE';
-                } elseif ($deadline && $deadline->lte($warningLimit)) {
-                    $effectiveResponseStatus = 'WARNING';
-                }
+            if ($deadline && $deadline->lte($now)) {
+                $effectiveResponseStatus = 'OVERDUE';
+            } elseif ($deadline && $deadline->lte($warningLimit)) {
+                $effectiveResponseStatus = 'WARNING';
             }
 
-            if (! $hasInitialResponse && in_array($effectiveResponseStatus, ['OVERDUE', 'WARNING'], true)) {
+            if (in_array($effectiveResponseStatus, ['OVERDUE', 'WARNING'], true)) {
                 if ($case->sla_status !== $effectiveResponseStatus) {
                     $slaUpdates[$case->id] = $effectiveResponseStatus;
                     $case->sla_status = $effectiveResponseStatus;
@@ -100,7 +129,7 @@ class PageController extends Controller
             }
         }
 
-        // Keep database in sync if any statuses changed
+        // Keep database in sync if any statuses changed for genuinely unresponded cases
         if (! empty($slaUpdates)) {
             foreach ($slaUpdates as $caseId => $newStatus) {
                 DB::table('case_slas')->where('case_id', $caseId)->update([
@@ -252,7 +281,9 @@ class PageController extends Controller
         }
 
         $overdueCount = $cases->filter(function ($c) {
-            return $c->sla_status === 'OVERDUE' || $c->resolution_status === 'OVERDUE';
+            $isActive = ! in_array($c->status, ['RESOLVED', 'CLOSED'], true);
+
+            return $isActive && ($c->sla_status === 'OVERDUE' || $c->resolution_status === 'OVERDUE');
         })->count();
 
         return view('dashboard', [

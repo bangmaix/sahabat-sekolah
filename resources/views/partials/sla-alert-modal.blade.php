@@ -60,6 +60,9 @@
                                 <span class="sla-risk-chip risk-{{ strtolower($alertCase->risk_level) }}">
                                     {{ $alertCase->risk_level }}
                                 </span>
+                                <span class="sla-unresponded-badge">
+                                    <i data-lucide="mail-warning"></i> Belum Direspon
+                                </span>
                             </div>
                             <div class="sla-status-badge {{ $alertCase->is_overdue ? 'badge-overdue' : 'badge-warning' }}">
                                 <i data-lucide="{{ $alertCase->is_overdue ? 'alert-octagon' : 'clock' }}"></i>
@@ -92,7 +95,7 @@
                                     {{ $alertCase->formatted_deadline }}
                                 </strong>
                             </div>
-                            <a href="{{ route('cases.show', $alertCase->case_number) }}" class="sla-action-btn">
+                            <a href="{{ route('cases.show', $alertCase->case_number, false) }}" class="sla-action-btn" onclick="event.stopPropagation(); window.location.href=this.href;">
                                 <span>Beri Respons Sekarang</span>
                                 <i data-lucide="arrow-right"></i>
                             </a>
@@ -108,7 +111,7 @@
                     <span>Respons awal yang cepat memberikan kepastian psikologis dan rasa aman bagi siswa yang melapor.</span>
                 </div>
                 <div class="sla-footer-actions">
-                    <a href="{{ route('reports.inbox', ['sla_status' => 'OVERDUE']) }}" class="sla-footer-link">
+                    <a href="{{ route('reports.inbox', ['status' => 'PENDING_RESPONSE', 'sla_status' => 'OVERDUE'], false) }}" class="sla-footer-link" onclick="event.stopPropagation(); window.location.href=this.href;">
                         Lihat Semua di Inbox <i data-lucide="external-link"></i>
                     </a>
                     <button type="button" class="sla-dismiss-btn" onclick="closeSlaModal()">
@@ -479,6 +482,25 @@
             border: 1px solid #bae6fd;
         }
 
+        .sla-unresponded-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .sla-unresponded-badge svg {
+            width: 12px;
+            height: 12px;
+        }
+
         .sla-status-badge {
             display: inline-flex;
             align-items: center;
@@ -611,12 +633,23 @@
             gap: 6px;
             box-shadow: 0 4px 12px rgba(22, 117, 232, 0.25);
             transition: all 0.15s ease;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sla-action-btn * {
+            pointer-events: none;
         }
 
         .sla-action-btn:hover {
             background: linear-gradient(135deg, #1265cc 0%, #0c4fa4 100%);
             transform: translateX(2px);
             box-shadow: 0 6px 16px rgba(22, 117, 232, 0.35);
+        }
+
+        .sla-action-btn:active {
+            transform: scale(0.98);
         }
 
         .sla-action-btn svg {
@@ -669,6 +702,13 @@
             padding: 7px 10px;
             border-radius: 6px;
             transition: background 0.15s ease;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sla-footer-link * {
+            pointer-events: none;
         }
 
         .sla-footer-link:hover {

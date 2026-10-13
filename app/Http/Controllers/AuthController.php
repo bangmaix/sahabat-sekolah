@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AConnect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +29,7 @@ class AuthController extends Controller
 
         $schoolName = null;
         if ($user->school_npsn) {
-            $schoolsMap = (new \App\Helpers\AConnect)->getSekolahMap();
+            $schoolsMap = (new AConnect)->getSekolahMap();
             $schoolName = $schoolsMap[$user->school_npsn] ?? $user->school_npsn;
         }
 

@@ -51,11 +51,19 @@ class ReportController extends Controller
             if ($sla === 'COMPLETED') {
                 $query->where(function ($q) {
                     $q->whereIn('cases.status', ['RESOLVED', 'CLOSED'])
-                        ->orWhere('case_slas.resolution_status', 'COMPLETED');
+                        ->orWhere('case_slas.resolution_status', 'COMPLETED')
+                        ->orWhere('case_slas.status', 'COMPLETED');
                 });
             } else {
-                $query->where('cases.status', '!=', 'PENDING_RESPONSE')
-                    ->where('case_slas.resolution_status', $sla);
+                $query->where(function ($q) use ($sla) {
+                    $q->where(function ($sub) use ($sla) {
+                        $sub->where('cases.status', 'PENDING_RESPONSE')
+                            ->where('case_slas.status', $sla);
+                    })->orWhere(function ($sub) use ($sla) {
+                        $sub->where('cases.status', '!=', 'PENDING_RESPONSE')
+                            ->where('case_slas.resolution_status', $sla);
+                    });
+                });
             }
         }
 

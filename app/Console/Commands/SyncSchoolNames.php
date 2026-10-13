@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\AConnect;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Helpers\AConnect;
 
 class SyncSchoolNames extends Command
 {
@@ -28,10 +28,10 @@ class SyncSchoolNames extends Command
     public function handle()
     {
         $this->info('Memulai sinkronisasi nama sekolah dari API...');
-        
+
         $schoolsMap = (new AConnect)->getSekolahMap();
         $users = DB::table('users')->whereNotNull('school_npsn')->get();
-        
+
         $updatedCount = 0;
         foreach ($users as $user) {
             if (isset($schoolsMap[$user->school_npsn])) {
@@ -41,8 +41,9 @@ class SyncSchoolNames extends Command
                 $updatedCount++;
             }
         }
-        
+
         $this->info("Berhasil melakukan sinkronisasi untuk {$updatedCount} akun.");
+
         return self::SUCCESS;
     }
 }
