@@ -209,6 +209,11 @@ Route::middleware('auth.session')->group(function () {
             ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
             ->name('achievements.index');
 
+        // View Student History by NISN (COUNSELOR + PRINCIPAL)
+        Route::get('/student/{nisn}', [AchievementController::class, 'studentProfile'])
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
+            ->name('achievements.student');
+
         // Manage Edit, Update, Destroy (COUNSELOR only)
         Route::middleware(['role:COUNSELOR', 'permission:ACHIEVEMENT_MANAGE'])->group(function () {
             Route::get('/{id}/edit', [AchievementController::class, 'edit'])->whereNumber('id')->name('achievements.edit');

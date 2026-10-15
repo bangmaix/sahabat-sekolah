@@ -372,4 +372,133 @@ class StudentAchievementTest extends TestCase
             'is_fallback' => true,
         ]);
     }
+
+    public function test_achievements_are_grouped_by_nisn_on_index_page(): void
+    {
+        $category = AchievementCategory::firstOrFail();
+
+        // Buat 2 prestasi untuk siswa yang sama (NISN 0081111111)
+        StudentAchievement::create([
+            'school_npsn' => $this->schoolNpsn,
+            'nisn' => '0081111111',
+            'student_name' => 'Farhan Alamsyah',
+            'class_name' => 'IX-A',
+            'category_id' => $category->id,
+            'achievement_name' => 'Juara 1 Catur Kota',
+            'achievement_level' => 'KOTA',
+            'ranking' => 'Juara 1',
+            'achievement_date' => '2026-08-10',
+            'created_by' => $this->counselorId,
+        ]);
+
+        StudentAchievement::create([
+            'school_npsn' => $this->schoolNpsn,
+            'nisn' => '0081111111',
+            'student_name' => 'Farhan Alamsyah',
+            'class_name' => 'IX-A',
+            'category_id' => $category->id,
+            'achievement_name' => 'Medali Emas OSN Nasional',
+            'achievement_level' => 'NASIONAL',
+            'ranking' => 'Juara 1',
+            'achievement_date' => '2026-09-20',
+            'created_by' => $this->counselorId,
+        ]);
+
+        // Buat 1 prestasi untuk siswa lain (NISN 0082222222)
+        StudentAchievement::create([
+            'school_npsn' => $this->schoolNpsn,
+            'nisn' => '0082222222',
+            'student_name' => 'Nadia Putri',
+            'class_name' => 'VIII-B',
+            'category_id' => $category->id,
+            'achievement_name' => 'Juara 3 Pidato Bahasa Inggris',
+            'achievement_level' => 'KECAMATAN',
+            'ranking' => 'Juara 3',
+            'achievement_date' => '2026-07-15',
+            'created_by' => $this->counselorId,
+        ]);
+
+        $response = $this->withSession($this->counselorSession())
+            ->get('/achievements');
+
+        $response->assertOk()
+            ->assertSee('Farhan Alamsyah')
+            ->assertSee('0081111111')
+            ->assertSee('2 Prestasi')
+            ->assertSee('Medali Emas OSN Nasional')
+            ->assertSee('Juara 1 Catur Kota')
+            ->assertSee('Nadia Putri')
+            ->assertSee('0082222222')
+            ->assertSee('1 Prestasi')
+            ->assertSee('Berdasarkan NISN');
+    }
+
+    public function test_student_profile_displays_cumulative_portfolio_by_nisn(): void
+    {
+        $category = AchievementCategory::firstOrFail();
+
+        StudentAchievement::create([
+            'school_npsn' => $this->schoolNpsn,
+            'nisn' => '0085556667',
+            'student_name' => 'Rizky Pratama',
+            'class_name' => 'VII-C',
+            'category_id' => $category->id,
+            'achievement_name' => 'Lomba Robotik Kreatif',
+            'achievement_level' => 'PROVINSI',
+            'ranking' => 'Juara 2',
+            'achievement_date' => '2026-06-11',
+            'created_by' => $this->counselorId,
+        ]);
+
+        StudentAchievement::create([
+            'school_npsn' => $this->schoolNpsn,
+            'nisn' => '0085556667',
+            'student_name' => 'Rizky Pratama',
+            'class_name' => 'VII-C',
+            'category_id' => $category->id,
+            'achievement_name' => 'Lomba Karya Tulis Ilmiah Remaja',
+            'achievement_level' => 'NASIONAL',
+            'ranking' => 'Juara 1',
+            'achievement_date' => '2026-09-01',
+            'created_by' => $this->counselorId,
+        ]);
+
+        $response = $this->withSession($this->counselorSession())
+            ->get('/achievements/student/0085556667');
+
+        $response->assertOk()
+            ->assertSee('Rizky Pratama')
+            ->assertSee('0085556667')
+            ->assertSee('Lomba Robotik Kreatif')
+            ->assertSee('Lomba Karya Tulis Ilmiah Remaja')
+            ->assertSee('2')
+            ->assertSee('Nasional');
+    }
+
+    public function test_student_profile_returns_404_for_unknown_nisn_or_other_school(): void
+    {
+        $category = AchievementCategory::firstOrFail();
+
+        // Prestasi di sekolah lain
+        StudentAchievement::create([
+            'school_npsn' => $this->otherSchoolNpsn,
+            'nisn' => '0098889990',
+            'student_name' => 'Siswa Sekolah Lain',
+            'category_id' => $category->id,
+            'achievement_name' => 'Prestasi Luar',
+            'achievement_level' => 'KOTA',
+            'ranking' => 'Juara 1',
+            'achievement_date' => '2026-05-01',
+        ]);
+
+        // NISN tidak ada di sistem
+        $responseNotFound = $this->withSession($this->counselorSession())
+            ->get('/achievements/student/0000000000');
+        $responseNotFound->assertNotFound();
+
+        // NISN milik sekolah lain
+        $responseOtherSchool = $this->withSession($this->counselorSession())
+            ->get('/achievements/student/0098889990');
+        $responseOtherSchool->assertNotFound();
+    }
 }

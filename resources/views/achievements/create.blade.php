@@ -55,7 +55,7 @@
                             <option value="{{ $student['nisn'] }}"
                                 data-name="{{ $student['nm_siswa'] }}"
                                 data-class="{{ $student['nm_kelas'] ?? '' }}"
-                                @selected(old('nisn') === $student['nisn'])>
+                                @selected(old('nisn', $prefillNisn ?? '') === $student['nisn'])>
                                 {{ $student['nm_siswa'] }} — NISN: {{ $student['nisn'] }} (Kelas {{ $student['nm_kelas'] ?? '-' }})
                             </option>
                         @endforeach
@@ -92,7 +92,7 @@
             <div style="margin-bottom:1rem;">
                 <label for="nisn" style="display:block;margin-bottom:.4rem;font-size:.85rem;font-weight:600;">NISN Siswa <span style="color:#ef4444;">*</span></label>
                 <div style="display:flex;gap:.6rem;">
-                    <input id="nisn" name="nisn" type="text" value="{{ old('nisn') }}"
+                    <input id="nisn" name="nisn" type="text" value="{{ old('nisn', $prefillStudent['nisn'] ?? $prefillNisn ?? '') }}"
                         placeholder="Masukkan 10 digit NISN..."
                         maxlength="20" style="flex:1;"
                         oninput="resetStudentFields()">
@@ -109,7 +109,7 @@
             {{-- Nama Siswa (auto-filled) --}}
             <div style="margin-bottom:1rem;">
                 <label for="student_name" style="display:block;margin-bottom:.4rem;font-size:.85rem;font-weight:600;">Nama Siswa <span style="color:#ef4444;">*</span></label>
-                <input id="student_name" name="student_name" type="text" value="{{ old('student_name') }}"
+                <input id="student_name" name="student_name" type="text" value="{{ old('student_name', $prefillStudent['nm_siswa'] ?? '') }}"
                     placeholder="Diisi otomatis setelah tarik data..." readonly
                     style="background:var(--surface-card);color:var(--text-muted);cursor:not-allowed;">
             </div>
@@ -118,7 +118,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                 <div>
                     <label for="class_name" style="display:block;margin-bottom:.4rem;font-size:.85rem;font-weight:600;">Kelas</label>
-                    <input id="class_name" name="class_name" type="text" value="{{ old('class_name') }}"
+                    <input id="class_name" name="class_name" type="text" value="{{ old('class_name', $prefillStudent['nm_kelas'] ?? '') }}"
                         placeholder="Diisi otomatis..." readonly
                         style="background:var(--surface-card);color:var(--text-muted);cursor:not-allowed;">
                 </div>

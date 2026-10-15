@@ -13,51 +13,113 @@ use Illuminate\Support\Facades\Storage;
 class AchievementController extends Controller
 {
     /**
-     * Daftar prestasi siswa di sekolah Guru BK.
+     * Daftar prestasi siswa di sekolah Guru BK, dikelompokkan berdasarkan NISN siswa.
      */
     public function index(Request $request)
     {
         $schoolNpsn = session('school_npsn');
         $categories = AchievementCategory::active()->orderBy('name')->get();
+        $likeOp = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
-        $query = DB::table('student_achievements')
-            ->join('achievement_categories', 'student_achievements.category_id', '=', 'achievement_categories.id')
-            ->where('student_achievements.school_npsn', $schoolNpsn)
-            ->select(
-                'student_achievements.*',
-                'achievement_categories.name as category_name',
-                'achievement_categories.code as category_code'
-            );
+        $query = StudentAchievement::with('category', 'creator')
+            ->where('school_npsn', $schoolNpsn);
 
         if ($categoryId = $request->input('category_id')) {
-            $query->where('student_achievements.category_id', $categoryId);
+            $query->where('category_id', $categoryId);
         }
 
         if ($level = $request->input('achievement_level')) {
-            $query->where('student_achievements.achievement_level', $level);
+            $query->where('achievement_level', $level);
         }
 
         if ($search = trim((string) $request->input('search'))) {
-            $query->where(function ($builder) use ($search) {
-                $builder->where('student_achievements.student_name', 'ilike', "%{$search}%")
-                    ->orWhere('student_achievements.nisn', 'like', "%{$search}%")
-                    ->orWhere('student_achievements.achievement_name', 'ilike', "%{$search}%");
+            $query->where(function ($builder) use ($search, $likeOp) {
+                $builder->where('student_name', $likeOp, "%{$search}%")
+                    ->orWhere('nisn', 'like', "%{$search}%")
+                    ->orWhere('achievement_name', $likeOp, "%{$search}%");
             });
         }
 
-        $achievements = $query->orderByDesc('student_achievements.achievement_date')->get();
+        $allAchievements = $query->orderByDesc('achievement_date')->get();
+
+        $levelWeights = [
+            'INTERNASIONAL' => 6,
+            'NASIONAL' => 5,
+            'PROVINSI' => 4,
+            'KOTA' => 3,
+            'KECAMATAN' => 2,
+            'SEKOLAH' => 1,
+        ];
+
+        // Kelompokkan data prestasi berdasarkan NISN siswa
+        $studentsGrouped = $allAchievements->groupBy('nisn')->map(function ($items, $nisn) use ($levelWeights) {
+            $latest = $items->first();
+            $highest = $items->sortByDesc(fn ($a) => $levelWeights[$a->achievement_level] ?? 0)->first();
+
+            return (object) [
+                'nisn' => (string) $nisn,
+                'student_name' => $latest->student_name,
+                'class_name' => $latest->class_name,
+                'total_achievements' => $items->count(),
+                'highest_level' => $highest?->achievement_level ?? 'SEKOLAH',
+                'highest_ranking' => $highest?->ranking ?? '',
+                'achievements' => $items,
+            ];
+        })->values();
 
         return view('achievements.index', [
-            'achievements' => $achievements,
+            'studentsGrouped' => $studentsGrouped,
+            'totalStudents' => $studentsGrouped->count(),
+            'totalAchievements' => $allAchievements->count(),
             'categories' => $categories,
             'filters' => $request->only(['category_id', 'achievement_level', 'search']),
         ]);
     }
 
     /**
+     * Portofolio lengkap prestasi siswa berdasarkan NISN.
+     */
+    public function studentProfile(string $nisn)
+    {
+        $schoolNpsn = session('school_npsn');
+
+        $achievements = StudentAchievement::with('category', 'creator')
+            ->where('school_npsn', $schoolNpsn)
+            ->where('nisn', $nisn)
+            ->orderByDesc('achievement_date')
+            ->get();
+
+        abort_if($achievements->isEmpty(), 404, 'Data prestasi siswa tidak ditemukan.');
+
+        $levelWeights = [
+            'INTERNASIONAL' => 6,
+            'NASIONAL' => 5,
+            'PROVINSI' => 4,
+            'KOTA' => 3,
+            'KECAMATAN' => 2,
+            'SEKOLAH' => 1,
+        ];
+        $highest = $achievements->sortByDesc(fn ($a) => $levelWeights[$a->achievement_level] ?? 0)->first();
+
+        $student = (object) [
+            'nisn' => $nisn,
+            'student_name' => $achievements->first()->student_name,
+            'class_name' => $achievements->first()->class_name,
+            'total_achievements' => $achievements->count(),
+            'highest_level' => $highest?->achievement_level ?? 'SEKOLAH',
+            'highest_achievement' => $highest,
+        ];
+
+        return view('achievements.student', [
+            'student' => $student,
+            'achievements' => $achievements,
+        ]);
+    }
+
+    /**
      * Form tambah prestasi.
      */
-    public function create()
+    public function create(Request $request)
     {
         $schoolNpsn = (string) session('school_npsn');
         $categories = AchievementCategory::active()->orderBy('name')->get();
@@ -87,12 +149,33 @@ class AchievementController extends Controller
             }
         }
 
+        // Prefill jika ada parameter nisn di URL (contoh dari tombol + Tambah Prestasi di card siswa)
+        $prefillNisn = $request->query('nisn');
+        $prefillStudent = null;
+        if ($prefillNisn) {
+            $foundInApi = collect($students)->firstWhere('nisn', $prefillNisn);
+            if ($foundInApi) {
+                $prefillStudent = $foundInApi;
+            } else {
+                $prevRecord = StudentAchievement::where('school_npsn', $schoolNpsn)->where('nisn', $prefillNisn)->first();
+                if ($prevRecord) {
+                    $prefillStudent = [
+                        'nisn' => $prevRecord->nisn,
+                        'nm_siswa' => $prevRecord->student_name,
+                        'nm_kelas' => $prevRecord->class_name,
+                    ];
+                }
+            }
+        }
+
         return view('achievements.create', [
             'categories' => $categories,
             'periods' => $periods,
             'activePeriod' => $activePeriod,
             'fallbackPeriod' => $fallbackPeriod,
             'students' => $students,
+            'prefillStudent' => $prefillStudent,
+            'prefillNisn' => $prefillNisn,
             'selectedSemesterId' => $semesterId,
             'isFallback' => $isFallback,
             'levels' => $this->achievementLevels(),
