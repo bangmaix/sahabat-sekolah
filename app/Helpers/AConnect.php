@@ -74,11 +74,76 @@ class AConnect
     }
 
     /**
-     * Mengambil data siswa dalam satu rombongan belajar.
+     * Mengambil detail daftar siswa dalam satu rombongan belajar (kelas).
      */
     public function getDataSiswaKelas(string $npsn, string $semester, string $rombonganBelajarId): array
     {
-        return $this->client()->get("/v1/data-siswa-kelas/{$npsn}/{$semester}/{$rombonganBelajarId}")->json() ?? [];
+        return $this->client()->get("/v1/data-kelas/{$npsn}/{$semester}/{$rombonganBelajarId}")->json() ?? [];
+    }
+
+    /**
+     * Mengambil seluruh data siswa di suatu sekolah untuk semester tertentu.
+     * Mengambil daftar kelas terlebih dahulu, lalu menarik siswa seluruh rombel via parallel HTTP pool.
+     * Data di-cache selama 1 jam untuk performa instan.
+     *
+     * @return list<array{nisn: string, nm_siswa: string, nm_kelas: string|null, rombongan_belajar_id: string|null}>
+     */
+    public function getSiswaSekolah(string $npsn, string $semester): array
+    {
+        if (empty($npsn) || empty($semester)) {
+            return [];
+        }
+
+        $cacheKey = "siswa_sekolah_{$npsn}_{$semester}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($npsn, $semester) {
+            $classesData = $this->getDataKelas($npsn, $semester);
+            $classes = $classesData['data'] ?? [];
+
+            if (empty($classes)) {
+                return [];
+            }
+
+            $responses = Http::pool(function ($pool) use ($classes, $npsn, $semester) {
+                return collect($classes)->map(function ($cls) use ($pool, $npsn, $semester) {
+                    $rombelId = $cls['rombongan_belajar_id'];
+
+                    return $pool->as($rombelId)
+                        ->withHeaders(['x-api-key' => $this->apiKey])
+                        ->baseUrl($this->baseUrl)
+                        ->timeout(10)
+                        ->get("/v1/data-kelas/{$npsn}/{$semester}/{$rombelId}");
+                })->all();
+            });
+
+            $students = [];
+            foreach ($classes as $cls) {
+                $rombelId = $cls['rombongan_belajar_id'];
+                $className = $cls['nm_kelas'] ?? '';
+                $resp = $responses[$rombelId] ?? null;
+
+                if ($resp && $resp->successful()) {
+                    $json = $resp->json();
+                    $members = $json['data'] ?? [];
+                    foreach ($members as $m) {
+                        if (! empty($m['nisn'])) {
+                            $students[] = [
+                                'nisn' => trim((string) $m['nisn']),
+                                'nm_siswa' => trim((string) ($m['nm_siswa'] ?? '')),
+                                'nm_kelas' => $className,
+                                'rombongan_belajar_id' => $rombelId,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            return collect($students)
+                ->unique('nisn')
+                ->sortBy('nm_siswa', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+        });
     }
 
     /**

@@ -100,6 +100,10 @@
                         href="{{ route('statistics.index') }}">
                         <i data-lucide="bar-chart-3"></i> Statistik
                     </a>
+                    <a class="nav-item {{ ($activeNav ?? '') === 'achievements' ? 'active' : '' }}"
+                        href="{{ route('achievements.index') }}">
+                        <i data-lucide="trophy"></i> Prestasi Siswa
+                    </a>
                 @else
                     <a class="nav-item {{ ($activeNav ?? '') === 'dashboard' ? 'active' : '' }}"
                         href="{{ route('dashboard') }}">
@@ -126,6 +130,10 @@
                     <a class="nav-item {{ ($activeNav ?? '') === 'statistics' ? 'active' : '' }}"
                         href="{{ route('statistics.index') }}">
                         <i data-lucide="bar-chart-3"></i> Statistik
+                    </a>
+                    <a class="nav-item {{ ($activeNav ?? '') === 'achievements' ? 'active' : '' }}"
+                        href="{{ route('achievements.index') }}">
+                        <i data-lucide="trophy"></i> Prestasi Siswa
                     </a>
                 @endif
             </nav>
