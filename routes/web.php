@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnonymousController;
 use App\Http\Controllers\AuthController;
@@ -112,6 +113,15 @@ Route::middleware('auth.session')->group(function () {
         Route::get('/', [AdminController::class, 'masterData'])->name('admin.master-data');
         Route::post('/categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');
         Route::post('/subcategories', [AdminController::class, 'storeSubcategory'])->name('admin.subcategories.store');
+
+        // Achievement Categories
+        Route::post('/achievement-categories', [AdminController::class, 'storeAchievementCategory'])->name('admin.achievement-categories.store');
+        Route::post('/achievement-categories/{id}/toggle', [AdminController::class, 'toggleAchievementCategory'])->name('admin.achievement-categories.toggle');
+
+        // Academic Periods
+        Route::post('/academic-periods', [AdminController::class, 'storeAcademicPeriod'])->name('admin.academic-periods.store');
+        Route::post('/academic-periods/{id}/set-active', [AdminController::class, 'setActivePeriod'])->name('admin.academic-periods.set-active');
+        Route::post('/academic-periods/{id}/set-fallback', [AdminController::class, 'setFallbackPeriod'])->name('admin.academic-periods.set-fallback');
     });
 
     // ==========================================
@@ -177,5 +187,49 @@ Route::middleware('auth.session')->group(function () {
             Route::post('/{caseNumber}/documents', [CaseController::class, 'uploadDocument'])->name('cases.documents');
             Route::get('/{caseNumber}/documents/{documentType}/{id}', [CaseController::class, 'downloadDocument'])->name('cases.documents.download');
         });
+    });
+
+    // ==========================================
+    // Achievements
+    // ==========================================
+    Route::prefix('achievements')->group(function () {
+        // AConnect AJAX lookup (COUNSELOR only)
+        Route::get('/fetch-student', [AchievementController::class, 'fetchStudent'])
+            ->middleware(['role:COUNSELOR', 'permission:ACHIEVEMENT_MANAGE'])
+            ->name('achievements.fetch-student');
+
+        // Manage Create & Store (COUNSELOR only) - must be before /{id} wildcard
+        Route::middleware(['role:COUNSELOR', 'permission:ACHIEVEMENT_MANAGE'])->group(function () {
+            Route::get('/create', [AchievementController::class, 'create'])->name('achievements.create');
+            Route::post('/', [AchievementController::class, 'store'])->name('achievements.store');
+        });
+
+        // View Index (COUNSELOR + PRINCIPAL)
+        Route::get('/', [AchievementController::class, 'index'])
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
+            ->name('achievements.index');
+
+        // View Student History by NISN (COUNSELOR + PRINCIPAL)
+        Route::get('/student/{nisn}', [AchievementController::class, 'studentProfile'])
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
+            ->name('achievements.student');
+
+        // Manage Edit, Update, Destroy (COUNSELOR only)
+        Route::middleware(['role:COUNSELOR', 'permission:ACHIEVEMENT_MANAGE'])->group(function () {
+            Route::get('/{id}/edit', [AchievementController::class, 'edit'])->whereNumber('id')->name('achievements.edit');
+            Route::post('/{id}', [AchievementController::class, 'update'])->whereNumber('id')->name('achievements.update');
+            Route::post('/{id}/delete', [AchievementController::class, 'destroy'])->whereNumber('id')->name('achievements.destroy');
+        });
+
+        // View Detail & Download Certificate (COUNSELOR + PRINCIPAL)
+        Route::get('/{id}', [AchievementController::class, 'show'])
+            ->whereNumber('id')
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
+            ->name('achievements.show');
+
+        Route::get('/{id}/certificate', [AchievementController::class, 'downloadCertificate'])
+            ->whereNumber('id')
+            ->middleware(['role:COUNSELOR,PRINCIPAL', 'permission:ACHIEVEMENT_VIEW'])
+            ->name('achievements.certificate');
     });
 });

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AConnect;
+use App\Models\AcademicPeriod;
+use App\Models\AchievementCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -150,6 +152,8 @@ class AdminController extends Controller
 
                 return $category;
             }),
+            'achievementCategories' => AchievementCategory::orderBy('name')->get(),
+            'academicPeriods' => AcademicPeriod::orderedList(),
         ]);
     }
 
@@ -221,5 +225,92 @@ class AdminController extends Controller
         auditAction('UPDATE_SLA_CONFIG', 'SLA_CONFIGURATION', $id, $data);
 
         return back()->with('success', 'Konfigurasi SLA berhasil diperbarui.');
+    }
+
+    // ------------------------------------------------------------------
+    // Achievement Categories
+    // ------------------------------------------------------------------
+
+    public function storeAchievementCategory(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:achievement_categories,name'],
+            'description' => ['nullable', 'string', 'max:500'],
+        ], [
+            'name.unique' => 'Kategori prestasi dengan nama tersebut sudah ada.',
+        ]);
+
+        AchievementCategory::create([
+            'code' => strtoupper(str_replace(' ', '_', $data['name'])),
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'status' => true,
+        ]);
+
+        auditAction('CREATE_ACHIEVEMENT_CATEGORY', 'ACHIEVEMENT_CATEGORY', null, $data);
+
+        return back()->with('success', 'Kategori prestasi berhasil ditambahkan.');
+    }
+
+    public function toggleAchievementCategory(int $id)
+    {
+        $category = AchievementCategory::findOrFail($id);
+        $category->update(['status' => ! $category->status]);
+        auditAction('TOGGLE_ACHIEVEMENT_CATEGORY', 'ACHIEVEMENT_CATEGORY', $id, ['status' => $category->status]);
+
+        $label = $category->status ? 'diaktifkan' : 'dinonaktifkan';
+
+        return back()->with('success', "Kategori prestasi berhasil {$label}.");
+    }
+
+    // ------------------------------------------------------------------
+    // Academic Periods (Master Semester Dapodik)
+    // ------------------------------------------------------------------
+
+    public function storeAcademicPeriod(Request $request)
+    {
+        $data = $request->validate([
+            'semester_id' => ['required', 'string', 'max:10', 'unique:academic_periods,semester_id', 'regex:/^\d{5}$/'],
+            'name' => ['required', 'string', 'max:255'],
+        ], [
+            'semester_id.unique' => 'ID semester tersebut sudah ada.',
+            'semester_id.regex' => 'ID semester harus 5 digit angka (contoh: 20261).',
+        ]);
+
+        $maxOrder = AcademicPeriod::max('order_no') ?? 0;
+
+        AcademicPeriod::create([
+            'semester_id' => $data['semester_id'],
+            'name' => $data['name'],
+            'is_active' => false,
+            'is_fallback' => false,
+            'order_no' => $maxOrder + 1,
+        ]);
+
+        auditAction('CREATE_ACADEMIC_PERIOD', 'ACADEMIC_PERIOD', null, $data);
+
+        return back()->with('success', 'Periode akademik berhasil ditambahkan.');
+    }
+
+    public function setActivePeriod(int $id)
+    {
+        // Hanya boleh ada 1 periode aktif
+        AcademicPeriod::query()->update(['is_active' => false]);
+        $period = AcademicPeriod::findOrFail($id);
+        $period->update(['is_active' => true]);
+        auditAction('SET_ACTIVE_PERIOD', 'ACADEMIC_PERIOD', $id, ['semester_id' => $period->semester_id]);
+
+        return back()->with('success', "Periode {$period->name} ditetapkan sebagai semester aktif.");
+    }
+
+    public function setFallbackPeriod(int $id)
+    {
+        // Hanya boleh ada 1 periode fallback
+        AcademicPeriod::query()->update(['is_fallback' => false]);
+        $period = AcademicPeriod::findOrFail($id);
+        $period->update(['is_fallback' => true]);
+        auditAction('SET_FALLBACK_PERIOD', 'ACADEMIC_PERIOD', $id, ['semester_id' => $period->semester_id]);
+
+        return back()->with('success', "Periode {$period->name} ditetapkan sebagai semester cadangan (fallback).");
     }
 }
