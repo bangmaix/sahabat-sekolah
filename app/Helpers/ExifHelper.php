@@ -14,8 +14,9 @@ class ExifHelper
      *
      * @return string Path relatif file yang disimpan pada disk
      */
-    public static function stripAndStore(UploadedFile $file, string $directory = 'evidences', string $disk = 'local'): string
+    public static function stripAndStore(UploadedFile $file, string $directory = 'evidences', ?string $disk = null): string
     {
+        $disk = $disk ?: AppStorage::privateDisk();
         $extension = strtolower($file->getClientOriginalExtension());
         $mime = $file->getMimeType() ?: '';
 
@@ -36,30 +37,37 @@ class ExifHelper
                         $filename = Str::random(40).'.'.$safeExt;
                         $relativeFilePath = trim($directory, '/').'/'.$filename;
 
-                        $storageRoot = Storage::disk($disk)->path('');
-                        $fullTargetDir = dirname($storageRoot.'/'.$relativeFilePath);
-
-                        if (! is_dir($fullTargetDir)) {
-                            @mkdir($fullTargetDir, 0755, true);
-                        }
-
-                        $fullTargetPath = $storageRoot.'/'.$relativeFilePath;
-
+                        $tempFile = tempnam(sys_get_temp_dir(), 'ss_exif_');
                         $saved = false;
-                        if ($safeExt === 'png') {
-                            imagealphablending($img, false);
-                            imagesavealpha($img, true);
-                            $saved = @imagepng($img, $fullTargetPath);
-                        } elseif ($safeExt === 'webp' && function_exists('imagewebp')) {
-                            $saved = @imagewebp($img, $fullTargetPath, 90);
+
+                        if ($tempFile !== false) {
+                            if ($safeExt === 'png') {
+                                imagealphablending($img, false);
+                                imagesavealpha($img, true);
+                                $saved = @imagepng($img, $tempFile);
+                            } elseif ($safeExt === 'webp' && function_exists('imagewebp')) {
+                                $saved = @imagewebp($img, $tempFile, 90);
+                            } else {
+                                $saved = @imagejpeg($img, $tempFile, 90);
+                            }
+
+                            imagedestroy($img);
+
+                            if ($saved && file_exists($tempFile)) {
+                                $stream = fopen($tempFile, 'rb');
+                                if ($stream !== false) {
+                                    Storage::disk($disk)->put($relativeFilePath, $stream);
+                                    if (is_resource($stream)) {
+                                        fclose($stream);
+                                    }
+                                    @unlink($tempFile);
+
+                                    return $relativeFilePath;
+                                }
+                                @unlink($tempFile);
+                            }
                         } else {
-                            $saved = @imagejpeg($img, $fullTargetPath, 90);
-                        }
-
-                        imagedestroy($img);
-
-                        if ($saved && file_exists($fullTargetPath)) {
-                            return $relativeFilePath;
+                            imagedestroy($img);
                         }
                     }
                 }

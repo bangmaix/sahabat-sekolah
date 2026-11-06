@@ -82,13 +82,17 @@
         </div>
     </div>
 
+    @php
+        $caseUrl = $reportData['case_url'] ?? (isset($reportData['case_number']) ? route('cases.show', $reportData['case_number']) : '#');
+    @endphp
+
     <div style="text-align: center; margin: 30px 0 16px;">
-        <a href="{{ $reportData['case_url'] }}" class="btn-primary" target="_blank">
+        <a href="{{ $caseUrl }}" class="btn-primary" target="_blank">
             Buka & Tindak Lanjuti Laporan
         </a>
     </div>
 
     <p style="font-size: 13px; color: #8295a8; text-align: center; margin: 0;">
-        Atau buka link: <a href="{{ $reportData['case_url'] }}" style="color: #1878e3; word-break: break-all;">{{ $reportData['case_url'] }}</a>
+        Atau buka link: <a href="{{ $caseUrl }}" style="color: #1878e3; word-break: break-all;">{{ $caseUrl }}</a>
     </p>
 @endsection

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AConnect;
+use App\Helpers\AppStorage;
 use App\Models\AcademicPeriod;
 use App\Models\AchievementCategory;
 use App\Models\StudentAchievement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class AchievementController extends Controller
 {
@@ -215,7 +215,7 @@ class AchievementController extends Controller
 
         $certificatePath = null;
         if ($request->hasFile('certificate')) {
-            $certificatePath = $request->file('certificate')->store('achievements/certificates', 'local');
+            $certificatePath = AppStorage::store($request->file('certificate'), 'achievements/certificates', 'private');
         }
 
         StudentAchievement::create([
@@ -302,9 +302,9 @@ class AchievementController extends Controller
         $certificatePath = $achievement->certificate_path;
         if ($request->hasFile('certificate')) {
             if ($certificatePath) {
-                Storage::disk('local')->delete($certificatePath);
+                AppStorage::delete($certificatePath, 'private');
             }
-            $certificatePath = $request->file('certificate')->store('achievements/certificates', 'local');
+            $certificatePath = AppStorage::store($request->file('certificate'), 'achievements/certificates', 'private');
         }
 
         $achievement->update([
@@ -333,7 +333,7 @@ class AchievementController extends Controller
             ->findOrFail($id);
 
         if ($achievement->certificate_path) {
-            Storage::disk('local')->delete($achievement->certificate_path);
+            AppStorage::delete($achievement->certificate_path, 'private');
         }
 
         auditAction('DELETE_ACHIEVEMENT', 'STUDENT_ACHIEVEMENT', $id, [
@@ -356,9 +356,7 @@ class AchievementController extends Controller
         $achievement = StudentAchievement::when(session('school_npsn'), fn ($q) => $q->where('school_npsn', session('school_npsn')))
             ->findOrFail($id);
 
-        abort_unless($achievement->certificate_path && Storage::disk('local')->exists($achievement->certificate_path), 404, 'Berkas tidak ditemukan.');
-
-        return Storage::disk('local')->download(
+        return AppStorage::download(
             $achievement->certificate_path,
             'Sertifikat-'.$achievement->student_name.'.'.pathinfo($achievement->certificate_path, PATHINFO_EXTENSION)
         );

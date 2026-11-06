@@ -206,7 +206,7 @@ class ReportController extends Controller
 
             if ($request->hasFile('evidences')) {
                 foreach ($request->file('evidences') as $file) {
-                    $path = ExifHelper::stripAndStore($file, 'evidences', 'local');
+                    $path = ExifHelper::stripAndStore($file, 'evidences');
                     DB::table('case_evidences')->insert([
                         'case_id' => $caseId,
                         'file_name' => $file->getClientOriginalName(),

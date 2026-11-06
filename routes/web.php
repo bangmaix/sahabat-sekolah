@@ -26,7 +26,7 @@ if (! function_exists('notifyCounselor')) {
     function notifyCounselor(string $type, string $title, string $message, ?string $caseNumber = null, string $priority = 'NORMAL'): void
     {
         DB::table('notifications')->insert([
-            'recipient_name' => 'Bu Ratna Sari', 'type' => $type, 'title' => $title,
+            'recipient_name' => session('user_name', 'Guru BK'), 'type' => $type, 'title' => $title,
             'message' => $message, 'priority' => $priority, 'case_number' => $caseNumber,
             'created_at' => now(), 'updated_at' => now(),
         ]);

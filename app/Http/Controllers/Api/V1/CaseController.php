@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\AppStorage;
 use App\Http\Controllers\Controller;
 use App\Mail\CaseEscalatedPrincipalMail;
 use Illuminate\Http\JsonResponse;
@@ -298,7 +299,7 @@ class CaseController extends Controller
             if ($request->hasFile('document_file')) {
                 $file = $request->file('document_file');
                 $docType = $data['document_type'] ?? ($nextStatus === 'CLOSED' || $nextStatus === 'RESOLVED' ? 'RESOLUTION' : 'EVIDENCE');
-                $path = $file->store('case-documents', 'local');
+                $path = AppStorage::store($file, 'case-documents', 'private');
 
                 $payload = [
                     'case_id' => $case->id,

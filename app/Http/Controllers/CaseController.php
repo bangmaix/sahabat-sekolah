@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AConnect;
+use App\Helpers\AppStorage;
 use App\Mail\CaseEscalatedPrincipalMail;
 use App\Models\AcademicPeriod;
 use Illuminate\Http\Request;
@@ -10,7 +11,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class CaseController extends Controller
@@ -270,7 +270,7 @@ class CaseController extends Controller
         ]);
 
         $case = scopedCase($caseNumber);
-        $escalatedBy = session('user_name', 'Bu Ratna Sari');
+        $escalatedBy = session('user_name', 'Guru BK');
         $now = now();
         $target = $data['escalate_to'] ?? 'PRINCIPAL';
 
@@ -456,7 +456,7 @@ class CaseController extends Controller
 
         DB::table('case_notes')->insert([
             'case_id' => $case->id, 'note_type' => $data['note_type'], 'content' => $data['content'],
-            'visibility' => 'PRIVATE_BK', 'created_by' => 'Bu Ratna Sari', 'created_at' => now(), 'updated_at' => now(),
+            'visibility' => 'PRIVATE_BK', 'created_by' => session('user_name', 'Guru BK'), 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         auditAction('CREATE_NOTE', 'CASE', $case->case_number, ['note_type' => $data['note_type']]);
@@ -484,11 +484,11 @@ class CaseController extends Controller
             DB::table('case_risk_assessments')->insert([
                 'case_id' => $case->id, 'category_score' => $data['category_score'], 'safety_score' => $data['safety_score'],
                 'repetition_score' => $data['repetition_score'], 'impact_score' => $data['impact_score'], 'final_score' => $score,
-                'risk_level' => $risk, 'assessed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                'risk_level' => $risk, 'assessed_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
             ]);
             DB::table('case_risk_histories')->insert([
                 'case_id' => $case->id, 'old_risk_level' => $case->risk_level, 'new_risk_level' => $risk,
-                'score' => $score, 'reason' => $data['reason'] ?? null, 'changed_by' => 'Bu Ratna Sari',
+                'score' => $score, 'reason' => $data['reason'] ?? null, 'changed_by' => session('user_name', 'Guru BK'),
                 'created_at' => $now, 'updated_at' => $now,
             ]);
             DB::table('cases')->where('id', $case->id)->update(['risk_level' => $risk, 'updated_at' => $now]);
@@ -524,12 +524,12 @@ class CaseController extends Controller
 
         $case = scopedCase($caseNumber);
         $file = $request->file('file');
-        $path = $file->store('case-documents', 'local');
+        $path = AppStorage::store($file, 'case-documents', 'private');
         $now = now();
 
         $payload = [
             'case_id' => $case->id, 'file_name' => $file->getClientOriginalName(), 'file_path' => $path,
-            'uploaded_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+            'uploaded_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
         ];
 
         if ($data['document_type'] === 'RESOLUTION') {
@@ -552,15 +552,6 @@ class CaseController extends Controller
         $table = $documentType === 'evidence' ? 'case_evidences' : 'case_resolution_documents';
         $document = DB::table($table)->where('id', $id)->where('case_id', $case->id)->firstOrFail();
 
-        $disk = 'local';
-        if (! Storage::disk($disk)->exists($document->file_path)) {
-            if (Storage::disk('public')->exists($document->file_path)) {
-                $disk = 'public';
-            } else {
-                abort(404, 'File tidak ditemukan.');
-            }
-        }
-
         auditAction('DOWNLOAD_DOCUMENT', 'CASE', $case->case_number, ['document_id' => $id, 'document_type' => $documentType]);
         DB::table('case_access_logs')->insert([
             'user_id' => session('user_id'), 'user_name' => session('user_name'), 'case_id' => $case->id,
@@ -568,7 +559,7 @@ class CaseController extends Controller
             'ip_address' => request()->ip(), 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        return Storage::disk($disk)->response($document->file_path, $document->file_name);
+        return AppStorage::response($document->file_path, $document->file_name);
     }
 
     public function printReport(string $caseNumber)
@@ -651,7 +642,7 @@ class CaseController extends Controller
 
             DB::table('case_status_histories')->insert([
                 'case_id' => $case->id, 'old_status' => $case->status, 'new_status' => $data['status'],
-                'reason' => $data['reason'] ?? null, 'changed_by' => 'Bu Ratna Sari',
+                'reason' => $data['reason'] ?? null, 'changed_by' => session('user_name', 'Guru BK'),
                 'created_at' => $now, 'updated_at' => $now,
             ]);
 
@@ -659,7 +650,7 @@ class CaseController extends Controller
                 'case_id' => $case->id,
                 'action_type' => $data['status'] === 'UNDER_VERIFICATION' ? 'VERIFICATION' : ($data['status'] === 'IN_HANDLING' ? 'HANDLING' : 'RESOLUTION'),
                 'description' => $data['reason'] ?: 'Status kasus diperbarui menjadi '.str_replace('_', ' ', $data['status']),
-                'performed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                'performed_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
             ]);
 
             if ($case->status === 'PENDING_RESPONSE') {
@@ -750,7 +741,7 @@ class CaseController extends Controller
 
                     DB::table('case_status_histories')->insert([
                         'case_id' => $case->id, 'old_status' => $case->status, 'new_status' => $data['status'],
-                        'reason' => $data['status_reason'] ?? null, 'changed_by' => 'Bu Ratna Sari',
+                        'reason' => $data['status_reason'] ?? null, 'changed_by' => session('user_name', 'Guru BK'),
                         'created_at' => $now, 'updated_at' => $now,
                     ]);
 
@@ -758,7 +749,7 @@ class CaseController extends Controller
                         'case_id' => $case->id,
                         'action_type' => $data['status'] === 'UNDER_VERIFICATION' ? 'VERIFICATION' : ($data['status'] === 'IN_HANDLING' ? 'HANDLING' : 'RESOLUTION'),
                         'description' => $data['status_reason'] ?: 'Status kasus diperbarui menjadi '.str_replace('_', ' ', $data['status']),
-                        'performed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                        'performed_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
                     ]);
 
                     if ($case->status === 'PENDING_RESPONSE') {
@@ -804,7 +795,7 @@ class CaseController extends Controller
 
                 DB::table('case_status_histories')->insert([
                     'case_id' => $case->id, 'old_status' => 'PENDING_RESPONSE', 'new_status' => 'UNDER_VERIFICATION',
-                    'reason' => 'Respons awal diberikan oleh Guru BK melalui catatan/dokumen', 'changed_by' => 'Bu Ratna Sari',
+                    'reason' => 'Respons awal diberikan oleh Guru BK melalui catatan/dokumen', 'changed_by' => session('user_name', 'Guru BK'),
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
 
@@ -812,7 +803,7 @@ class CaseController extends Controller
                     'case_id' => $case->id,
                     'action_type' => 'VERIFICATION',
                     'description' => 'Respons awal dicatat dalam penanganan kasus',
-                    'performed_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                    'performed_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
                 ]);
 
                 $config = DB::table('sla_configurations')->where('risk_level', $case->risk_level)->first();
@@ -842,7 +833,7 @@ class CaseController extends Controller
             if (! empty($data['note_content']) && ! empty($data['note_type'])) {
                 DB::table('case_notes')->insert([
                     'case_id' => $case->id, 'note_type' => $data['note_type'], 'content' => $data['note_content'],
-                    'visibility' => 'PRIVATE_BK', 'created_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                    'visibility' => 'PRIVATE_BK', 'created_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
                 ]);
 
                 auditAction('CREATE_NOTE', 'CASE', $case->case_number, ['note_type' => $data['note_type']]);
@@ -853,11 +844,11 @@ class CaseController extends Controller
             // 3. Upload Document
             if ($request->hasFile('document_file') && ! empty($data['document_type'])) {
                 $file = $request->file('document_file');
-                $path = $file->store('case-documents', 'local');
+                $path = AppStorage::store($file, 'case-documents', 'private');
 
                 $payload = [
                     'case_id' => $case->id, 'file_name' => $file->getClientOriginalName(), 'file_path' => $path,
-                    'uploaded_by' => 'Bu Ratna Sari', 'created_at' => $now, 'updated_at' => $now,
+                    'uploaded_by' => session('user_name', 'Guru BK'), 'created_at' => $now, 'updated_at' => $now,
                 ];
 
                 if ($data['document_type'] === 'RESOLUTION') {

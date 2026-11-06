@@ -112,13 +112,17 @@ class AConnect
             $classesData = $this->getDataKelas($npsn, $semester);
             $classes = $classesData['data'] ?? [];
 
-            if (empty($classes)) {
+            $validClasses = collect($classes)
+                ->filter(fn ($cls) => is_array($cls) && ! empty($cls['rombongan_belajar_id']))
+                ->values();
+
+            if ($validClasses->isEmpty()) {
                 return [];
             }
 
-            $responses = Http::pool(function ($pool) use ($classes, $npsn, $semester) {
-                return collect($classes)->map(function ($cls) use ($pool, $npsn, $semester) {
-                    $rombelId = $cls['rombongan_belajar_id'];
+            $responses = Http::pool(function ($pool) use ($validClasses, $npsn, $semester) {
+                return $validClasses->map(function ($cls) use ($pool, $npsn, $semester) {
+                    $rombelId = (string) $cls['rombongan_belajar_id'];
 
                     return $pool->as($rombelId)
                         ->withHeaders(['x-api-key' => $this->apiKey])
@@ -129,8 +133,8 @@ class AConnect
             });
 
             $students = [];
-            foreach ($classes as $cls) {
-                $rombelId = $cls['rombongan_belajar_id'];
+            foreach ($validClasses as $cls) {
+                $rombelId = (string) $cls['rombongan_belajar_id'];
                 $className = $cls['nm_kelas'] ?? '';
                 $resp = $responses[$rombelId] ?? null;
 

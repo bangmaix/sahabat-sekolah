@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\AConnect;
+use App\Helpers\AppStorage;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicPeriod;
 use App\Models\StudentAchievement;
@@ -104,12 +105,12 @@ class AchievementController extends Controller
 
         $certificatePath = null;
         if ($request->hasFile('certificate_file')) {
-            $certificatePath = $request->file('certificate_file')->store('achievements/certificates', 'public');
+            $certificatePath = AppStorage::store($request->file('certificate_file'), 'achievements/certificates', 'private');
         }
 
         $photoPath = null;
         if ($request->hasFile('photo_file')) {
-            $photoPath = $request->file('photo_file')->store('achievements/photos', 'public');
+            $photoPath = AppStorage::store($request->file('photo_file'), 'achievements/photos', 'public');
         }
 
         $defaultPoints = [

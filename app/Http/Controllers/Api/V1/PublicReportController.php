@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\AConnect;
+use App\Helpers\ExifHelper;
 use App\Helpers\SlaCalculator;
 use App\Http\Controllers\Controller;
 use App\Mail\NewReportCounselorMail;
@@ -147,7 +148,7 @@ class PublicReportController extends Controller
             $uploadedFiles = [];
             if ($request->hasFile('evidences')) {
                 foreach ($request->file('evidences') as $file) {
-                    $path = $file->store('evidences', 'local');
+                    $path = ExifHelper::stripAndStore($file, 'evidences');
                     $evidenceId = DB::table('case_evidences')->insertGetId([
                         'case_id' => $caseId,
                         'file_name' => $file->getClientOriginalName(),
@@ -239,6 +240,7 @@ class PublicReportController extends Controller
                     'description' => $data['description'],
                     'risk_level' => $result['risk_level'],
                     'submitted_at' => now()->toDateTimeString(),
+                    'case_url' => route('cases.show', $result['case_number']),
                     'is_fallback' => $isFallback,
                 ];
 
