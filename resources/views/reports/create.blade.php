@@ -156,13 +156,36 @@
                 <div class="two-fields">
                     <label>Kategori kejadian <span>*</span>
                         <div class="category-quick-chips flex flex-wrap gap-1.5 my-1.5">
-                            <span class="text-xs text-gray-500 w-full mb-0.5">Pilih cepat yang paling sesuai:</span>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Perundungan Verbal">🗣️ Ejekan / Hinaan</button>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Perundungan Fisik">🥊 Pukulan / Kekerasan</button>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Sosial/Psikologis">👥 Dikucilkan / Dijauhi</button>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Cyberbullying">📱 Di Medsos / Game / HP</button>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Pemerasan">💰 Dipalak / Uang</button>
-                            <button type="button" class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-colors" data-cat="Indikasi/Kekhawatiran">❓ Belum Yakin / Takut</button>
+                            <span class="text-xs text-gray-500 w-full mb-0.5">Pilihan cepat kategori (sesuai data resmi):</span>
+                            @php
+                                $categoryPresets = [
+                                    'Perundungan Fisik' => ['icon' => '🥊', 'badge' => 'Fisik', 'desc' => 'Pukulan / Kekerasan'],
+                                    'Perundungan Verbal' => ['icon' => '🗣️', 'badge' => 'Verbal', 'desc' => 'Ejekan / Hinaan'],
+                                    'Perundungan Sosial' => ['icon' => '👥', 'badge' => 'Sosial', 'desc' => 'Dikucilkan / Dijauhi'],
+                                    'Cyberbullying' => ['icon' => '📱', 'badge' => 'Cyberbullying', 'desc' => 'Medsos / Chat'],
+                                    'Perundungan Bernuansa Seksual' => ['icon' => '⚠️', 'badge' => 'Seksual', 'desc' => 'Pelecehan / Tidak Senonoh'],
+                                    'Lainnya' => ['icon' => '📌', 'badge' => 'Lainnya', 'desc' => 'Bentuk Lainnya'],
+                                ];
+                            @endphp
+                            @foreach ($categories as $category)
+                                @php
+                                    $preset = $categoryPresets[$category->name] ?? [
+                                        'icon' => '🏷️',
+                                        'badge' => $category->name,
+                                        'desc' => $category->description ?? '',
+                                    ];
+                                @endphp
+                                <button type="button"
+                                    class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-all cursor-pointer inline-flex items-center gap-1"
+                                    data-cat="{{ $category->name }}"
+                                    data-category-id="{{ $category->id }}">
+                                    <span>{{ $preset['icon'] }}</span>
+                                    <span class="font-semibold">{{ $preset['badge'] }}</span>
+                                    @if (!empty($preset['desc']))
+                                        <span class="chip-desc text-slate-500 font-normal">({{ $preset['desc'] }})</span>
+                                    @endif
+                                </button>
+                            @endforeach
                         </div>
                         <select name="category" id="category-select" required>
                             <option value="">Pilih kategori resmi</option>
@@ -173,6 +196,19 @@
                         </select>
                     </label>
                     <label>Subkategori
+                        <div id="subcategory-chips-container" class="subcategory-quick-chips flex flex-wrap gap-1.5 my-1.5 hidden">
+                            <span class="text-xs text-gray-500 w-full mb-0.5">Pilihan cepat bentuk kejadian:</span>
+                            @foreach ($categories as $category)
+                                @foreach ($category->subcategories as $subcategory)
+                                    <button type="button"
+                                        class="subcat-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-all cursor-pointer hidden"
+                                        data-category-id="{{ $category->id }}"
+                                        data-subcat="{{ $subcategory->name }}">
+                                        {{ $subcategory->name }}
+                                    </button>
+                                @endforeach
+                            @endforeach
+                        </div>
                         <select name="subcategory" id="subcategory-select">
                             <option value="">Pilih subkategori</option>
                             @foreach ($categories as $category)
@@ -230,15 +266,67 @@
         const descTextarea = document.getElementById('description-textarea');
         const voiceBtn = document.getElementById('voice-input-btn');
         const voiceLabel = document.getElementById('voice-btn-label');
+        const categoryChips = document.querySelectorAll('.quick-chip');
+        const subcatChips = document.querySelectorAll('.subcat-chip');
+        const subcatContainer = document.getElementById('subcategory-chips-container');
 
-        // Quick Category Chips
-        document.querySelectorAll('.quick-chip').forEach(chip => {
+        function updateCategoryChipVisual(activeCategoryName) {
+            categoryChips.forEach(chip => {
+                const isActive = chip.dataset.cat === activeCategoryName;
+                const desc = chip.querySelector('.chip-desc');
+                if (isActive) {
+                    chip.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+                    chip.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+                    if (desc) {
+                        desc.classList.add('text-blue-100');
+                        desc.classList.remove('text-slate-500');
+                    }
+                } else {
+                    chip.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+                    chip.classList.add('bg-slate-100', 'border-slate-200');
+                    if (desc) {
+                        desc.classList.remove('text-blue-100');
+                        desc.classList.add('text-slate-500');
+                    }
+                }
+            });
+        }
+
+        function updateSubcategoryChipVisual(activeSubcatName) {
+            subcatChips.forEach(chip => {
+                const isActive = chip.dataset.subcat === activeSubcatName;
+                if (isActive) {
+                    chip.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+                    chip.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+                } else {
+                    chip.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'shadow-sm');
+                    chip.classList.add('bg-slate-100', 'border-slate-200');
+                }
+            });
+        }
+
+        // Quick Category Chips Click Handler
+        categoryChips.forEach(chip => {
             chip.addEventListener('click', function() {
                 const targetCat = this.dataset.cat;
                 for (let i = 0; i < categorySelect.options.length; i++) {
-                    if (categorySelect.options[i].value === targetCat || categorySelect.options[i].text.includes(targetCat)) {
+                    if (categorySelect.options[i].value === targetCat) {
                         categorySelect.selectedIndex = i;
                         filterSubcategories();
+                        break;
+                    }
+                }
+            });
+        });
+
+        // Quick Subcategory Chips Click Handler
+        subcatChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                const targetSubcat = this.dataset.subcat;
+                for (let i = 0; i < subcategorySelect.options.length; i++) {
+                    if (subcategorySelect.options[i].value === targetSubcat) {
+                        subcategorySelect.selectedIndex = i;
+                        updateSubcategoryChipVisual(targetSubcat);
                         break;
                     }
                 }
@@ -312,12 +400,48 @@
 
         function filterSubcategories() {
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const id = selectedOption?.dataset.categoryId;
+            const categoryId = selectedOption?.dataset.categoryId;
+            const categoryName = categorySelect.value;
+
+            updateCategoryChipVisual(categoryName);
+
+            let visibleSubcatCount = 0;
+            let currentSubcatStillValid = false;
 
             Array.from(subcategorySelect.options).forEach(option => {
                 if (!option.value) return;
-                option.hidden = Boolean(option.dataset.categoryId) && option.dataset.categoryId !== id;
+                const match = Boolean(option.dataset.categoryId) && option.dataset.categoryId === categoryId;
+                option.hidden = !match;
+                if (match && option.value === subcategorySelect.value) {
+                    currentSubcatStillValid = true;
+                }
             });
+
+            // Reset subcategory jika opsi sebelumnya tidak sesuai kategori yang baru dipilih
+            if (!currentSubcatStillValid && subcategorySelect.value) {
+                subcategorySelect.value = '';
+            }
+
+            // Filter pilihan cepat subkategori
+            subcatChips.forEach(chip => {
+                const match = chip.dataset.categoryId === categoryId;
+                if (match) {
+                    chip.classList.remove('hidden');
+                    visibleSubcatCount++;
+                } else {
+                    chip.classList.add('hidden');
+                }
+            });
+
+            if (subcatContainer) {
+                if (visibleSubcatCount > 0 && categoryId) {
+                    subcatContainer.classList.remove('hidden');
+                } else {
+                    subcatContainer.classList.add('hidden');
+                }
+            }
+
+            updateSubcategoryChipVisual(subcategorySelect.value);
         }
 
         function updateIdentityFields() {
@@ -336,6 +460,9 @@
         }
 
         categorySelect.addEventListener('change', filterSubcategories);
+        subcategorySelect.addEventListener('change', function() {
+            updateSubcategoryChipVisual(subcategorySelect.value);
+        });
         identityModeSelect.addEventListener('change', updateIdentityFields);
 
         filterSubcategories();
