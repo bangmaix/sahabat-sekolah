@@ -38,7 +38,7 @@
                 </div>
             </section>
 
-            <form class="report-form" method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data">
+            <form id="report-form" class="report-form" method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="form-heading">
                     <div>
@@ -153,10 +153,15 @@
                     </div>
                 </div>
 
-                <div class="two-fields">
-                    <label>Kategori kejadian <span>*</span>
-                        <div class="category-quick-chips flex flex-wrap gap-1.5 my-1.5">
-                            <span class="text-xs text-gray-500 w-full mb-0.5">Pilihan cepat kategori (sesuai data resmi):</span>
+                <div class="flex flex-col gap-4 mb-4">
+                    <!-- Kategori Kejadian (Tombol Interaktif + Hidden Input) -->
+                    <div class="flex flex-col gap-1.5" id="category-selection-wrapper">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-semibold text-gray-700">Kategori kejadian <span class="text-red-500">*</span></label>
+                            <span id="category-selected-label" class="text-xs text-blue-600 font-semibold"></span>
+                        </div>
+                        <input type="hidden" name="category" id="category-input" value="{{ old('category') }}" required>
+                        <div class="category-quick-chips flex flex-wrap gap-2 pt-1" id="category-chips-list">
                             @php
                                 $categoryPresets = [
                                     'Perundungan Fisik' => ['icon' => '🥊', 'badge' => 'Fisik', 'desc' => 'Pukulan / Kekerasan'],
@@ -176,10 +181,10 @@
                                     ];
                                 @endphp
                                 <button type="button"
-                                    class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-all cursor-pointer inline-flex items-center gap-1"
+                                    class="quick-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-3 py-1.5 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                     data-cat="{{ $category->name }}"
                                     data-category-id="{{ $category->id }}">
-                                    <span>{{ $preset['icon'] }}</span>
+                                    <span class="text-sm">{{ $preset['icon'] }}</span>
                                     <span class="font-semibold">{{ $preset['badge'] }}</span>
                                     @if (!empty($preset['desc']))
                                         <span class="chip-desc text-slate-500 font-normal">({{ $preset['desc'] }})</span>
@@ -187,21 +192,24 @@
                                 </button>
                             @endforeach
                         </div>
-                        <select name="category" id="category-select" required>
-                            <option value="">Pilih kategori resmi</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->name }}" data-category-id="{{ $category->id }}"
-                                    @selected(old('category') === $category->name)>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-                    <label>Subkategori
-                        <div id="subcategory-chips-container" class="subcategory-quick-chips flex flex-wrap gap-1.5 my-1.5 hidden">
-                            <span class="text-xs text-gray-500 w-full mb-0.5">Pilihan cepat bentuk kejadian:</span>
+                        <span id="category-error-msg" class="text-xs text-red-500 hidden mt-1">Silakan pilih salah satu kategori kejadian di atas.</span>
+                        @error('category')
+                            <small class="text-xs text-red-500 mt-1">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <!-- Subkategori Kejadian (Muncul Dinamis Saat Kategori Dipilih) -->
+                    <div id="subcategory-chips-container" class="flex flex-col gap-1.5 hidden pt-2 border-t border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-semibold text-gray-700">Subkategori kejadian <span class="text-xs text-slate-400 font-normal">(opsional, pilih bentuk yang paling mendekati)</span></label>
+                            <span id="subcategory-selected-label" class="text-xs text-blue-600 font-semibold"></span>
+                        </div>
+                        <input type="hidden" name="subcategory" id="subcategory-input" value="{{ old('subcategory') }}">
+                        <div class="subcategory-quick-chips flex flex-wrap gap-2 pt-1">
                             @foreach ($categories as $category)
                                 @foreach ($category->subcategories as $subcategory)
                                     <button type="button"
-                                        class="subcat-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-2.5 py-1 transition-all cursor-pointer hidden"
+                                        class="subcat-chip text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-full px-3 py-1.5 transition-all cursor-pointer hidden inline-flex items-center gap-1"
                                         data-category-id="{{ $category->id }}"
                                         data-subcat="{{ $subcategory->name }}">
                                         {{ $subcategory->name }}
@@ -209,16 +217,10 @@
                                 @endforeach
                             @endforeach
                         </div>
-                        <select name="subcategory" id="subcategory-select">
-                            <option value="">Pilih subkategori</option>
-                            @foreach ($categories as $category)
-                                @foreach ($category->subcategories as $subcategory)
-                                    <option value="{{ $subcategory->name }}" data-category-id="{{ $category->id }}"
-                                        @selected(old('subcategory') === $subcategory->name)>{{ $subcategory->name }}</option>
-                                @endforeach
-                            @endforeach
-                        </select>
-                    </label>
+                        @error('subcategory')
+                            <small class="text-xs text-red-500 mt-1">{{ $message }}</small>
+                        @enderror
+                    </div>
                 </div>
 
                 <label>
@@ -255,8 +257,17 @@
     <script>
         lucide.createIcons();
 
-        const categorySelect = document.getElementById('category-select');
-        const subcategorySelect = document.getElementById('subcategory-select');
+        const reportForm = document.getElementById('report-form');
+        const categoryInput = document.getElementById('category-input');
+        const subcategoryInput = document.getElementById('subcategory-input');
+        const categoryChips = document.querySelectorAll('.quick-chip');
+        const subcatChips = document.querySelectorAll('.subcat-chip');
+        const subcatContainer = document.getElementById('subcategory-chips-container');
+        const catSelectedLabel = document.getElementById('category-selected-label');
+        const subcatSelectedLabel = document.getElementById('subcategory-selected-label');
+        const catErrorMsg = document.getElementById('category-error-msg');
+        const catWrapper = document.getElementById('category-selection-wrapper');
+
         const identityModeSelect = document.getElementById('identity-mode-select');
         const reporterNameAsterisk = document.getElementById('reporter-name-asterisk');
         const reporterNameInput = document.getElementById('reporter-name-input');
@@ -266,9 +277,6 @@
         const descTextarea = document.getElementById('description-textarea');
         const voiceBtn = document.getElementById('voice-input-btn');
         const voiceLabel = document.getElementById('voice-btn-label');
-        const categoryChips = document.querySelectorAll('.quick-chip');
-        const subcatChips = document.querySelectorAll('.subcat-chip');
-        const subcatContainer = document.getElementById('subcategory-chips-container');
 
         function updateCategoryChipVisual(activeCategoryName) {
             categoryChips.forEach(chip => {
@@ -290,6 +298,10 @@
                     }
                 }
             });
+
+            if (catSelectedLabel) {
+                catSelectedLabel.textContent = activeCategoryName ? 'Terpilih: ' + activeCategoryName : '';
+            }
         }
 
         function updateSubcategoryChipVisual(activeSubcatName) {
@@ -303,35 +315,83 @@
                     chip.classList.add('bg-slate-100', 'border-slate-200');
                 }
             });
+
+            if (subcatSelectedLabel) {
+                subcatSelectedLabel.textContent = activeSubcatName ? 'Terpilih: ' + activeSubcatName : '';
+            }
         }
 
-        // Quick Category Chips Click Handler
+        function selectCategory(categoryName, categoryId) {
+            categoryInput.value = categoryName;
+            if (catErrorMsg) catErrorMsg.classList.add('hidden');
+            updateCategoryChipVisual(categoryName);
+
+            // Filter pilihan subkategori
+            let visibleSubcatCount = 0;
+            let currentSubcatStillValid = false;
+
+            subcatChips.forEach(chip => {
+                const match = String(chip.dataset.categoryId) === String(categoryId);
+                if (match) {
+                    chip.classList.remove('hidden');
+                    visibleSubcatCount++;
+                    if (chip.dataset.subcat === subcategoryInput.value) {
+                        currentSubcatStillValid = true;
+                    }
+                } else {
+                    chip.classList.add('hidden');
+                }
+            });
+
+            // Reset subkategori jika tidak sesuai kategori baru
+            if (!currentSubcatStillValid) {
+                subcategoryInput.value = '';
+            }
+            updateSubcategoryChipVisual(subcategoryInput.value);
+
+            if (subcatContainer) {
+                if (visibleSubcatCount > 0 && categoryId) {
+                    subcatContainer.classList.remove('hidden');
+                } else {
+                    subcatContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        // Event listener klik tombol kategori
         categoryChips.forEach(chip => {
             chip.addEventListener('click', function() {
                 const targetCat = this.dataset.cat;
-                for (let i = 0; i < categorySelect.options.length; i++) {
-                    if (categorySelect.options[i].value === targetCat) {
-                        categorySelect.selectedIndex = i;
-                        filterSubcategories();
-                        break;
-                    }
-                }
+                const targetId = this.dataset.categoryId;
+                selectCategory(targetCat, targetId);
             });
         });
 
-        // Quick Subcategory Chips Click Handler
+        // Event listener klik tombol subkategori (klik lagi untuk toggle / batal pilih)
         subcatChips.forEach(chip => {
             chip.addEventListener('click', function() {
                 const targetSubcat = this.dataset.subcat;
-                for (let i = 0; i < subcategorySelect.options.length; i++) {
-                    if (subcategorySelect.options[i].value === targetSubcat) {
-                        subcategorySelect.selectedIndex = i;
-                        updateSubcategoryChipVisual(targetSubcat);
-                        break;
+                if (subcategoryInput.value === targetSubcat) {
+                    subcategoryInput.value = '';
+                } else {
+                    subcategoryInput.value = targetSubcat;
+                }
+                updateSubcategoryChipVisual(subcategoryInput.value);
+            });
+        });
+
+        // Validasi Submit Form jika kategori belum dipilih
+        if (reportForm) {
+            reportForm.addEventListener('submit', function(e) {
+                if (!categoryInput.value || !categoryInput.value.trim()) {
+                    e.preventDefault();
+                    if (catErrorMsg) catErrorMsg.classList.remove('hidden');
+                    if (catWrapper) {
+                        catWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }
             });
-        });
+        }
 
         // Panic Exit
         if (panicBtn) {
@@ -398,52 +458,6 @@
             voiceBtn.style.display = 'none';
         }
 
-        function filterSubcategories() {
-            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const categoryId = selectedOption?.dataset.categoryId;
-            const categoryName = categorySelect.value;
-
-            updateCategoryChipVisual(categoryName);
-
-            let visibleSubcatCount = 0;
-            let currentSubcatStillValid = false;
-
-            Array.from(subcategorySelect.options).forEach(option => {
-                if (!option.value) return;
-                const match = Boolean(option.dataset.categoryId) && option.dataset.categoryId === categoryId;
-                option.hidden = !match;
-                if (match && option.value === subcategorySelect.value) {
-                    currentSubcatStillValid = true;
-                }
-            });
-
-            // Reset subcategory jika opsi sebelumnya tidak sesuai kategori yang baru dipilih
-            if (!currentSubcatStillValid && subcategorySelect.value) {
-                subcategorySelect.value = '';
-            }
-
-            // Filter pilihan cepat subkategori
-            subcatChips.forEach(chip => {
-                const match = chip.dataset.categoryId === categoryId;
-                if (match) {
-                    chip.classList.remove('hidden');
-                    visibleSubcatCount++;
-                } else {
-                    chip.classList.add('hidden');
-                }
-            });
-
-            if (subcatContainer) {
-                if (visibleSubcatCount > 0 && categoryId) {
-                    subcatContainer.classList.remove('hidden');
-                } else {
-                    subcatContainer.classList.add('hidden');
-                }
-            }
-
-            updateSubcategoryChipVisual(subcategorySelect.value);
-        }
-
         function updateIdentityFields() {
             const mode = identityModeSelect.value;
             const container = document.getElementById('reporter-identity-container');
@@ -459,14 +473,19 @@
             }
         }
 
-        categorySelect.addEventListener('change', filterSubcategories);
-        subcategorySelect.addEventListener('change', function() {
-            updateSubcategoryChipVisual(subcategorySelect.value);
-        });
         identityModeSelect.addEventListener('change', updateIdentityFields);
-
-        filterSubcategories();
         updateIdentityFields();
+
+        // Inisialisasi awal jika ada nilai lama (misal gagal validasi backend)
+        if (categoryInput && categoryInput.value) {
+            const initialChip = Array.from(categoryChips).find(c => c.dataset.cat === categoryInput.value);
+            if (initialChip) {
+                selectCategory(categoryInput.value, initialChip.dataset.categoryId);
+            }
+        }
+        if (subcategoryInput && subcategoryInput.value) {
+            updateSubcategoryVisual(subcategoryInput.value);
+        }
     </script>
 </body>
 
