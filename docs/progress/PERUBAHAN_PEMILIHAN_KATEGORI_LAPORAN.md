@@ -45,23 +45,26 @@ Sebelum pembaruan ini dilakukan, formulir pembuatan laporan perundungan memiliki
 
 ## 4. Rincian Perubahan Teknis
 
-### A. Tampilan Kategori Kejadian
-Elemen `<select name="category">` dihapus dan digantikan oleh:
+### A. Tampilan Kategori Kejadian (Tombol Ringkas dalam Grid 2 Kolom)
+Elemen `<select name="category">` dan kartu tebal (*card*) dihapus, digantikan oleh tombol ringkas (*compact buttons*) dalam grid 2 kolom (`grid grid-cols-1 sm:grid-cols-2 gap-2`):
 - `<input type="hidden" name="category" id="category-input" value="{{ old('category') }}" required>`
-- Daftar tombol interaktif yang di-*loop* langsung dari database (`$categories`):
-  - 🥊 **Fisik** *(Pukulan / Kekerasan)* &rarr; `Perundungan Fisik`
-  - 🗣️ **Verbal** *(Ejekan / Hinaan)* &rarr; `Perundungan Verbal`
-  - 👥 **Sosial** *(Dikucilkan / Dijauhi)* &rarr; `Perundungan Sosial`
-  - 📱 **Cyberbullying** *(Medsos / Chat)* &rarr; `Cyberbullying`
-  - ⚠️ **Seksual** *(Pelecehan / Tidak Senonoh)* &rarr; `Perundungan Bernuansa Seksual`
-  - 📌 **Lainnya** *(Bentuk Lainnya)* &rarr; `Lainnya`
-- Label indikator realtime: Menampilkan teks `Terpilih: [Nama Kategori]` di sebelah label judul.
+- `<input type="hidden" name="category_id" id="category-id-input" value="{{ old('category_id') }}">`
+- Setiap kategori resmi dari database (`$categories`) berwujud **tombol ramping** dengan ikon emoji dan nama kategori:
+  - 🥊 `Perundungan Fisik` (ID #1)
+  - 🗣️ `Perundungan Verbal` (ID #2)
+  - 👥 `Perundungan Sosial` (ID #3)
+  - 📱 `Cyberbullying` (ID #4)
+  - ⚠️ `Perundungan Bernuansa Seksual` (ID #5)
+  - 📌 `Lainnya` (ID #6)
+- Saat dipilih, tombol langsung berubah warna biru aktif (`bg-blue-600 text-white border-blue-600`) secara instan.
 
-### B. Tampilan Subkategori Kejadian (Adaptif)
-Elemen `<select name="subcategory">` dihapus dan digantikan oleh:
+### B. Tampilan Subkategori Menyesuaikan Kategori (Terkait ID Database)
+Subkategori tidak lagi dirender rata (*flat list*) bercampur dalam satu baris, melainkan dikelompokkan secara hierarkis per `category_id` dari database:
 - `<input type="hidden" name="subcategory" id="subcategory-input" value="{{ old('subcategory') }}">`
-- Wadah subkategori tersembunyi secara default, dan **otomatis terbuka hanya jika kategori yang dipilih memiliki subkategori**.
-- Tombol subkategori mendukung fitur *toggle* (dapat diklik ulang untuk membatalkan pilihan jika pelapor merasa bentuk kejadian kurang spesifik).
+- `<input type="hidden" name="subcategory_id" id="subcategory-id-input" value="{{ old('subcategory_id') }}">`
+- Begitu salah satu tombol kategori diklik, muncul panel subkategori yang hanya menampilkan grup tombol subkategori milik kategori tersebut (`#subcat-group-{category_id}` dalam 2 kolom).
+- Hanya subkategori milik kategori yang dipilih (`category_id` sesuai database) yang akan ditampilkan.
+- Tombol subkategori mendukung fitur *toggle* (klik sekali untuk memilih, klik lagi untuk membatalkan jika pelapor hanya ingin melaporkan kategori umum).
 
 ### C. Validasi Sisi Klien & Restorasi Data Lama (*Old Input*)
 - **Validasi Submit**: Jika pelapor menekan tombol *Kirim laporan* tanpa memilih kategori, form dicegah terkirim, pesan peringatan merah dimunculkan, dan layar otomatis bergulir (*smooth scroll*) ke area pemilihan kategori.
