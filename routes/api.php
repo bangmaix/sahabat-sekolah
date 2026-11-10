@@ -1,43 +1,73 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Api\V1\AchievementController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CaseController;
+use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PublicReportController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 
 Route::prefix('v1')->group(function () {
-    Route::post('/auth/login', function () {
-        $data = request()->validate(['email' => ['required', 'email'], 'password' => ['required']]);
-        $user = DB::table('users')->where('email', $data['email'])->first();
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
-            return response()->json(['message' => 'Email atau password tidak sesuai.'], 422);
-        }
-        $plainToken = Str::random(64);
-        DB::table('api_tokens')->insert(['user_id' => $user->id, 'token_hash' => hash('sha256', $plainToken), 'expires_at' => now()->addDays(30), 'created_at' => now(), 'updated_at' => now()]);
+    // ==========================================
+    // Public Mobile Endpoints (No Token Required)
+    // ==========================================
+    Route::prefix('public')->group(function () {
+        Route::get('/schools', [PublicReportController::class, 'schools']);
+        Route::get('/categories', [PublicReportController::class, 'categories']);
+        Route::post('/reports', [PublicReportController::class, 'createReport']);
+        Route::post('/reports/track', [PublicReportController::class, 'trackReport']);
+        Route::get('/anonymous/{token}/messages', [PublicReportController::class, 'anonymousMessages']);
+        Route::post('/anonymous/{token}/messages', [PublicReportController::class, 'sendAnonymousMessage']);
+    });
 
-        return response()->json(['token' => $plainToken, 'user' => ['name' => $user->name, 'role' => $user->role, 'school_npsn' => $user->school_npsn]]);
-    })->middleware('throttle:5,1');
+    // ==========================================
+    // Mobile Authentication Endpoints
+    // ==========================================
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+        Route::post('/logout', [AuthController::class, 'logout'])->middleware('api.token');
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
+    });
 
+    // ==========================================
+    // Protected Mobile Endpoints (Require Bearer Token)
+    // ==========================================
     Route::middleware('api.token')->group(function () {
-        Route::get('/me', fn (Request $request) => response()->json(['data' => $request->attributes->get('api_user')]));
-        Route::get('/cases', function (Request $request) {
-            $user = $request->attributes->get('api_user');
-            $cases = DB::table('cases')->where('school_npsn', $user->school_npsn)->orderByDesc('updated_at')->get();
+        // User Profile
+        Route::get('/me', [AuthController::class, 'me']);
 
-            return response()->json(['data' => $cases]);
-        });
-        Route::get('/cases/{caseNumber}', function (Request $request, string $caseNumber) {
-            $user = $request->attributes->get('api_user');
-            $case = DB::table('cases')->where('school_npsn', $user->school_npsn)->where('case_number', $caseNumber)->firstOrFail();
+        // Dashboard & Analytics
+        Route::get('/dashboard', [DashboardController::class, 'overview']);
+        Route::get('/statistics', [DashboardController::class, 'statistics']);
 
-            return response()->json(['data' => $case]);
+        // Case Management
+        Route::prefix('cases')->group(function () {
+            Route::get('/', [CaseController::class, 'index']);
+            Route::get('/{caseNumber}', [CaseController::class, 'show']);
+            Route::post('/{caseNumber}/actions', [CaseController::class, 'processAction']);
+            Route::post('/{caseNumber}/notes', [CaseController::class, 'addNote']);
+            Route::post('/{caseNumber}/escalate', [CaseController::class, 'escalate']);
+            Route::post('/{caseNumber}/parent-involvement', [CaseController::class, 'updateParentInvolvement']);
+            Route::post('/{caseNumber}/participants', [CaseController::class, 'addParticipant']);
+            Route::post('/{caseNumber}/anonymous-reply', [CaseController::class, 'replyAnonymous']);
         });
-        Route::get('/notifications', function (Request $request) {
-            $user = $request->attributes->get('api_user');
-            $recipient = $user->role === 'PRINCIPAL' ? 'Kepala Sekolah' : 'Bu Ratna Sari';
 
-            return response()->json(['data' => DB::table('notifications')->where('recipient_name', $recipient)->latest()->get()]);
+        // Notifications
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index']);
+            Route::post('/read-selected', [NotificationController::class, 'readSelected']);
+            Route::post('/read-all', [NotificationController::class, 'readAll']);
+            Route::post('/{id}/read', [NotificationController::class, 'read']);
         });
+
+        // Student Achievements & Search
+        Route::prefix('achievements')->group(function () {
+            Route::get('/', [AchievementController::class, 'index']);
+            Route::get('/{id}', [AchievementController::class, 'show']);
+            Route::post('/', [AchievementController::class, 'store']);
+        });
+        Route::get('/students/search', [AchievementController::class, 'searchStudents']);
     });
 });

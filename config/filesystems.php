@@ -17,6 +17,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default Private & Public Application Disks
+    |--------------------------------------------------------------------------
+    |
+    | Sahabat Sekolah memisahkan berkas privat (dokumen kasus, bukti, sertifikat)
+    | dan berkas publik (foto prestasi, aset umum).
+    | Pada local, keduanya tetap menggunakan local disk (tidak mengirim ke Kominfo).
+    | Saat di server (FILESYSTEM_DISK=s3), otomatis diarahkan ke s3-private & s3-public.
+    |
+    */
+
+    'default_private' => env('FILESYSTEM_PRIVATE_DISK', env('FILESYSTEM_DISK') === 's3' ? 's3-private' : 'local'),
+    'default_public' => env('FILESYSTEM_PUBLIC_DISK', env('FILESYSTEM_DISK') === 's3' ? 's3-public' : 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -51,11 +66,42 @@ return [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'bucket' => env('AWS_BUCKET', 'sahabatsekolah'),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Storage Server Kominfo - Berkas Publik (Foto prestasi, logo, dll)
+        's3-public' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'bucket' => env('AWS_BUCKET', 'sahabatsekolah'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            'root' => env('AWS_PUBLIC_PREFIX', env('APP_ENV') === 'production' ? 'public' : 'dev-public'),
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Storage Server Kominfo - Berkas Privat / Rahasia (Dokumen kasus, bukti, sertifikat)
+        's3-private' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'bucket' => env('AWS_BUCKET', 'sahabatsekolah'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            'root' => env('AWS_PRIVATE_PREFIX', env('APP_ENV') === 'production' ? 'private' : 'dev-private'),
+            'visibility' => 'private',
             'throw' => false,
             'report' => false,
         ],

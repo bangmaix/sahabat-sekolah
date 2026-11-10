@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ScanSla extends Command
@@ -20,8 +21,11 @@ class ScanSla extends Command
         $slas = DB::table('case_slas')
             ->join('cases', 'case_slas.case_id', '=', 'cases.id')
             ->whereIn('cases.status', ['PENDING_RESPONSE', 'UNDER_VERIFICATION', 'IN_HANDLING'])
-            ->select('case_slas.*', 'cases.case_number', 'cases.status as case_status')
+            ->select('case_slas.*', 'cases.case_number', 'cases.status as case_status', 'cases.school_npsn')
             ->get();
+
+        // Cache counselor names per school to avoid repeated queries
+        $counselorNameCache = [];
 
         foreach ($slas as $sla) {
             $nextStatus = null;
@@ -58,6 +62,27 @@ class ScanSla extends Command
             }
 
             if ($nextStatus) {
+                $schoolNpsn = (string) ($sla->school_npsn ?? '');
+                if ($schoolNpsn !== '' && ! isset($counselorNameCache[$schoolNpsn])) {
+                    $counselorName = DB::table('users')
+                        ->where('school_npsn', $schoolNpsn)
+                        ->where('role', 'COUNSELOR')
+                        ->value('name');
+
+                    if (! $counselorName) {
+                        $counselorName = DB::table('users')
+                            ->where('school_npsn', $schoolNpsn)
+                            ->where('role', 'PRINCIPAL')
+                            ->value('name');
+                    }
+
+                    $counselorNameCache[$schoolNpsn] = $counselorName ?: 'Guru BK';
+                }
+
+                $recipientName = ($schoolNpsn !== '' && isset($counselorNameCache[$schoolNpsn]))
+                    ? $counselorNameCache[$schoolNpsn]
+                    : 'Guru BK';
+
                 $reminderType = $nextStatus === 'OVERDUE' ? 'OVERDUE' : 'WARNING';
 
                 $updateData = ['updated_at' => $now];
@@ -73,11 +98,11 @@ class ScanSla extends Command
                 DB::table('case_reminders')->insertOrIgnore([
                     'case_id' => $sla->case_id, 'reminder_type' => $reminderType,
                     'scheduled_at' => $now, 'sent_at' => $now,
-                    'recipient_name' => 'Bu Ratna Sari', 'status' => 'SENT',
+                    'recipient_name' => $recipientName, 'status' => 'SENT',
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
                 DB::table('notifications')->insert([
-                    'recipient_name' => 'Bu Ratna Sari', 'type' => 'SLA_'.$nextStatus,
+                    'recipient_name' => $recipientName, 'type' => 'SLA_'.$nextStatus,
                     'title' => $title, 'message' => $message, 'priority' => $priority,
                     'case_number' => $sla->case_number, 'created_at' => $now, 'updated_at' => $now,
                 ]);
@@ -97,6 +122,9 @@ class ScanSla extends Command
                 $updated++;
             }
         }
+
+        Cache::put('sahabat_sla_last_scan_at', $now->toIso8601String(), 86400);
+        Cache::put('sahabat_sla_last_scan_updated', $updated, 86400);
 
         $this->info("SLA scan selesai: {$updated} status diperbarui.");
 

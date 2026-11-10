@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AnonymousTokenHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -9,14 +10,14 @@ class AnonymousController extends Controller
 {
     public function channel(Request $request)
     {
-        $token = $request->input('token');
+        $token = trim((string) $request->input('token'));
         $report = null;
         $messages = collect();
 
-        if ($token) {
+        if ($token !== '') {
             $report = DB::table('anonymous_report_tokens')
                 ->join('reports', 'anonymous_report_tokens.report_id', '=', 'reports.id')
-                ->where('anonymous_report_tokens.token_hash', hash('sha256', strtoupper($token)))
+                ->where('anonymous_report_tokens.token_hash', AnonymousTokenHelper::hash($token))
                 ->where('anonymous_report_tokens.status', true)
                 ->where(function ($query) {
                     $query->whereNull('anonymous_report_tokens.expires_at')
@@ -42,12 +43,14 @@ class AnonymousController extends Controller
     public function sendMessage(Request $request)
     {
         $data = $request->validate([
-            'token' => ['required', 'string', 'size:12'],
+            'token' => ['required', 'string', 'min:6', 'max:100'],
             'message' => ['required', 'string', 'min:5', 'max:2000'],
         ]);
 
+        $tokenClean = trim($data['token']);
+
         $report = DB::table('anonymous_report_tokens')
-            ->where('token_hash', hash('sha256', strtoupper($data['token'])))
+            ->where('token_hash', AnonymousTokenHelper::hash($tokenClean))
             ->where('status', true)
             ->first();
 
@@ -61,9 +64,18 @@ class AnonymousController extends Controller
             'updated_at' => now(),
         ]);
 
-        notifyCounselor('ANONYMOUS_MESSAGE', 'Pesan anonim baru', 'Pelapor mengirim informasi tambahan pada laporan.', null, 'HIGH');
+        $caseNumber = DB::table('cases')->where('report_id', $report->report_id)->value('case_number');
 
-        return redirect()->route('anonymous.channel', ['token' => strtoupper($data['token'])])
+        auditAction('SEND_ANONYMOUS_MESSAGE', 'REPORT', $report->report_id, null, null, true);
+
+        notifyCounselor('ANONYMOUS_MESSAGE', 'Pesan anonim baru', 'Pelapor mengirim informasi tambahan pada laporan.', $caseNumber, 'HIGH');
+
+        if ($request->input('redirect_to') === 'track') {
+            return redirect()->route('reports.track', ['q' => $tokenClean])
+                ->with('success', 'Pesan Anda berhasil dikirim ke Guru BK.');
+        }
+
+        return redirect()->route('anonymous.channel', ['token' => $tokenClean])
             ->with('success', 'Pesan anonim berhasil dikirim.');
     }
 }

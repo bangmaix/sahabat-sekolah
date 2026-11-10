@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AConnect;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -22,6 +23,7 @@ class SystemController extends Controller
             'checks' => [
                 'database' => $database,
                 'storage' => is_writable(storage_path()) ? 'ok' : 'failed',
+                'sla_scheduler_heartbeat' => Cache::get('sahabat_sla_last_scan_at', 'belum_pernah_dijalankan'),
             ],
             'timestamp' => now()->toIso8601String(),
         ], $database === 'ok' ? 200 : 503);

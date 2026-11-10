@@ -74,14 +74,25 @@
                         <td><span class="status {{ strtolower($case->status) }}">{{ str_replace('_', ' ', $case->status) }}</span></td>
                         <td><span class="priority {{ strtolower($case->risk_level) }}">{{ $case->risk_level }}</span></td>
                         <td>
-                            @if ($case->status === 'PENDING_RESPONSE')
-                                <span class="text-gray-400">-</span>
-                            @else
-                                @php
-                                    $activeSla = in_array($case->status, ['RESOLVED', 'CLOSED']) ? 'COMPLETED' : $case->resolution_status;
-                                @endphp
-                                <span class="sla-{{ strtolower($activeSla) }}">{{ $activeSla }}</span>
-                            @endif
+                            @php
+                                $displaySla = 'ON_TIME';
+                                if ($case->status === 'PENDING_RESPONSE') {
+                                    $displaySla = $case->sla_status ?: 'ON_TIME';
+                                    if ($displaySla !== 'OVERDUE' && $case->response_deadline && \Illuminate\Support\Carbon::parse($case->response_deadline)->isPast()) {
+                                        $displaySla = 'OVERDUE';
+                                    }
+                                } elseif ($case->sla_status === 'OVERDUE') {
+                                    // If initial response was overdue, SLA must remain OVERDUE
+                                    $displaySla = 'OVERDUE';
+                                } elseif ($case->resolution_status === 'OVERDUE' || ($case->resolution_deadline && \Illuminate\Support\Carbon::parse($case->resolution_deadline)->isPast() && in_array($case->status, ['UNDER_VERIFICATION', 'IN_HANDLING']))) {
+                                    $displaySla = 'OVERDUE';
+                                } elseif (in_array($case->status, ['RESOLVED', 'CLOSED'])) {
+                                    $displaySla = 'COMPLETED';
+                                } else {
+                                    $displaySla = in_array($case->resolution_status, ['WARNING', 'OVERDUE']) ? $case->resolution_status : ($case->sla_status ?: 'ON_TIME');
+                                }
+                            @endphp
+                            <span class="sla-{{ strtolower($displaySla) }}">{{ $displaySla }}</span>
                         </td>
                         <td>
                             <a class="view-button" href="{{ route('cases.show', $case->case_number) }}">

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Sahabat Sekolah' }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap"
         rel="stylesheet">
@@ -28,6 +29,28 @@
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
+        }
+
+        .change-password-button {
+            border: 0;
+            background: #edf5fb;
+            color: #5c7b98;
+            width: 31px;
+            height: 31px;
+            border-radius: 7px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .change-password-button:hover {
+            background: #e0efff;
+            color: #1675e8;
+        }
+
+        .change-password-button svg {
+            width: 15px;
         }
     </style>
 </head>
@@ -64,6 +87,10 @@
                     <a class="nav-item {{ ($activeNav ?? '') === 'admin-schools' ? 'active' : '' }}"
                         href="{{ route('admin.schools') }}">
                         <i data-lucide="building-2"></i> Sekolah
+                    </a>
+                    <a class="nav-item {{ ($activeNav ?? '') === 'achievements' ? 'active' : '' }}"
+                        href="{{ route('achievements.index') }}">
+                        <i data-lucide="trophy"></i> Prestasi Siswa
                     </a>
                     <a class="nav-item {{ ($activeNav ?? '') === 'admin-master-data' ? 'active' : '' }}"
                         href="{{ route('admin.master-data') }}">
@@ -104,6 +131,24 @@
                         href="{{ route('achievements.index') }}">
                         <i data-lucide="trophy"></i> Prestasi Siswa
                     </a>
+                    <a class="nav-item {{ ($activeNav ?? '') === 'notifications' ? 'active' : '' }}"
+                        href="{{ route('notifications.index') }}">
+                        <i data-lucide="bell"></i> Notifikasi
+                        @php
+                            $unreadNotifsCount = \Illuminate\Support\Facades\DB::table('notifications')
+                                ->leftJoin('cases', 'notifications.case_number', '=', 'cases.case_number')
+                                ->where(function ($q) {
+                                    $q->where('cases.school_npsn', session('school_npsn'))->orWhereNull(
+                                        'notifications.case_number',
+                                    );
+                                })
+                                ->whereNull('notifications.read_at')
+                                ->count();
+                        @endphp
+                        @if ($unreadNotifsCount > 0)
+                            <b>{{ $unreadNotifsCount }}</b>
+                        @endif
+                    </a>
                 @else
                     <a class="nav-item {{ ($activeNav ?? '') === 'dashboard' ? 'active' : '' }}"
                         href="{{ route('dashboard') }}">
@@ -134,6 +179,24 @@
                     <a class="nav-item {{ ($activeNav ?? '') === 'achievements' ? 'active' : '' }}"
                         href="{{ route('achievements.index') }}">
                         <i data-lucide="trophy"></i> Prestasi Siswa
+                    </a>
+                    <a class="nav-item {{ ($activeNav ?? '') === 'notifications' ? 'active' : '' }}"
+                        href="{{ route('notifications.index') }}">
+                        <i data-lucide="bell"></i> Notifikasi
+                        @php
+                            $unreadNotifsCount = \Illuminate\Support\Facades\DB::table('notifications')
+                                ->leftJoin('cases', 'notifications.case_number', '=', 'cases.case_number')
+                                ->where(function ($q) {
+                                    $q->where('cases.school_npsn', session('school_npsn'))->orWhereNull(
+                                        'notifications.case_number',
+                                    );
+                                })
+                                ->whereNull('notifications.read_at')
+                                ->count();
+                        @endphp
+                        @if ($unreadNotifsCount > 0)
+                            <b>{{ $unreadNotifsCount }}</b>
+                        @endif
                     </a>
                 @endif
             </nav>
@@ -191,7 +254,18 @@
                                 <div class="notif-dropdown-header">
                                     <strong>Notifikasi</strong>
                                     @if ($headerUnreadCount > 0)
-                                        <span class="notif-unread-badge">{{ $headerUnreadCount }} belum dibaca</span>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span class="notif-unread-badge">{{ $headerUnreadCount }} belum
+                                                dibaca</span>
+                                            <form method="POST" action="{{ route('notifications.read-all') }}"
+                                                style="margin:0;">
+                                                @csrf
+                                                <button type="submit" class="notif-readall-btn"
+                                                    title="Tandai semua notifikasi dibaca">
+                                                    <i data-lucide="check-check"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     @else
                                         <small class="notif-read-all">Semua dibaca</small>
                                     @endif
@@ -224,6 +298,11 @@
                                         </div>
                                     @endforelse
                                 </div>
+                                <div class="notif-dropdown-footer">
+                                    <a href="{{ route('notifications.index') }}" class="notif-view-all">
+                                        Lihat Semua Notifikasi <i data-lucide="arrow-right"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     @endif
@@ -231,7 +310,7 @@
                         {{ strtoupper(substr(session('user_name', 'BK'), 0, 2)) }}
                     </div>
                     <div>
-                        <strong>{{ session('user_name', 'Bu Ratna Sari') }}</strong>
+                        <strong>{{ session('user_name', 'Guru BK') }}</strong>
                         <small>
                             @if (session('user_role') === 'ADMIN')
                                 Administrator Platform
@@ -242,12 +321,18 @@
                             @endif
                         </small>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="logout-button" type="submit" title="Keluar">
-                            <i data-lucide="log-out"></i>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button class="change-password-button" type="button" id="btn-change-password-global"
+                            title="Ubah Kata Sandi Saya">
+                            <i data-lucide="key-round"></i>
                         </button>
-                    </form>
+                        <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                            @csrf
+                            <button class="logout-button" type="submit" title="Keluar">
+                                <i data-lucide="log-out"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </header>
 
@@ -255,7 +340,8 @@
                 <div class="success-banner"><i data-lucide="circle-check"></i>{{ session('success') }}</div>
             @endif
             @if ($errors->any())
-                <div class="success-banner error-banner"><i data-lucide="circle-alert"></i>{{ $errors->first() }}</div>
+                <div class="success-banner error-banner"><i data-lucide="circle-alert"></i>{{ $errors->first() }}
+                </div>
             @endif
 
             @yield('content')
@@ -267,6 +353,78 @@
             </footer>
         </main>
     </div>
+
+    {{-- ======================== MODAL: UBAH KATA SANDI USER ======================== --}}
+    <div id="modal-change-password" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog"
+        aria-modal="true" aria-labelledby="modal-cp-title"
+        style="display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center; padding:16px;">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" id="modal-cp-backdrop"
+            style="position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-modal"
+            style="position:relative; z-index:10000; max-width:440px; width:100%; background:#fff; border-radius:16px; padding:24px; box-shadow:0 20px 45px rgba(18,56,106,0.18);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+                <div>
+                    <h2 id="modal-cp-title"
+                        style="font:800 17px 'Plus Jakarta Sans', sans-serif; color:#12386a; margin:0;">Ubah Kata Sandi
+                    </h2>
+                    <p style="font-size:13px; color:#7e91a7; margin:4px 0 0;">Perbarui kata sandi akun Anda untuk
+                        menjaga keamanan.</p>
+                </div>
+                <button type="button" id="modal-cp-close"
+                    style="width:30px; height:30px; border-radius:50%; border:0; background:#f1f5f9; color:#64748b; display:grid; place-items:center; cursor:pointer;">
+                    <i data-lucide="x" style="width:16px;"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('password.change') }}" id="form-change-password"
+                style="display:grid; gap:12px;">
+                @csrf
+                <div>
+                    <label
+                        style="display:block; font-size:12px; font-weight:700; color:#496985; margin-bottom:5px;">Kata
+                        Sandi Saat Ini <span style="color:#ef4444;">*</span></label>
+                    <input type="password" name="current_password" required
+                        placeholder="Masukkan kata sandi saat ini"
+                        style="width:100%; border:1px solid #dfe8f1; border-radius:8px; padding:9px 12px; font-size:13px; color:#1e3a58; background:#fbfdff; outline:none;">
+                </div>
+                <div>
+                    <label
+                        style="display:block; font-size:12px; font-weight:700; color:#496985; margin-bottom:5px;">Kata
+                        Sandi Baru <span style="color:#ef4444;">*</span> <small
+                            style="color:#8ba0b3; font-weight:400;">(Min. 8 karakter)</small></label>
+                    <input type="password" name="password" required minlength="8"
+                        placeholder="Minimal 8 karakter baru"
+                        style="width:100%; border:1px solid #dfe8f1; border-radius:8px; padding:9px 12px; font-size:13px; color:#1e3a58; background:#fbfdff; outline:none;">
+                </div>
+                <div>
+                    <label
+                        style="display:block; font-size:12px; font-weight:700; color:#496985; margin-bottom:5px;">Konfirmasi
+                        Kata Sandi Baru <span style="color:#ef4444;">*</span></label>
+                    <input type="password" name="password_confirmation" required minlength="8"
+                        placeholder="Ulangi kata sandi baru"
+                        style="width:100%; border:1px solid #dfe8f1; border-radius:8px; padding:9px 12px; font-size:13px; color:#1e3a58; background:#fbfdff; outline:none;">
+                </div>
+
+                <div
+                    style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; font-size:12px; color:#64748b; line-height:1.5;">
+                    🔒 <strong>Pemberitahuan:</strong> Notifikasi keamanan akan otomatis dikirimkan ke email Anda begitu
+                    kata sandi berhasil diperbarui.
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+                    <button type="button" id="modal-cp-cancel"
+                        style="border:1px solid #dfe8f1; background:#f8fafc; color:#5c7b98; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        style="border:0; background:#1878e3; color:#ffffff; padding:8px 18px; border-radius:8px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 4px 12px rgba(24,120,227,0.25);">
+                        <i data-lucide="check" style="width:14px;"></i> Simpan Kata Sandi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
@@ -294,6 +452,37 @@
                     }
                 });
             }
+
+            // ---- Change Password Modal ----
+            const modalCp = document.getElementById('modal-change-password');
+            const btnOpenCp = document.getElementById('btn-change-password-global');
+            const btnCloseCp = document.getElementById('modal-cp-close');
+            const btnCancelCp = document.getElementById('modal-cp-cancel');
+            const backdropCp = document.getElementById('modal-cp-backdrop');
+
+            function openCpModal() {
+                if (!modalCp) return;
+                modalCp.style.display = 'flex';
+                modalCp.classList.remove('hidden');
+                lucide.createIcons();
+            }
+
+            function closeCpModal() {
+                if (!modalCp) return;
+                modalCp.style.display = 'none';
+                modalCp.classList.add('hidden');
+            }
+
+            if (btnOpenCp) btnOpenCp.addEventListener('click', openCpModal);
+            if (btnCloseCp) btnCloseCp.addEventListener('click', closeCpModal);
+            if (btnCancelCp) btnCancelCp.addEventListener('click', closeCpModal);
+            if (backdropCp) backdropCp.addEventListener('click', closeCpModal);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeCpModal();
+                }
+            });
         });
     </script>
 </body>

@@ -240,7 +240,7 @@
             border: 1px solid #fecaca;
             border-radius: 20px;
             padding: 3px 9px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.02em;
             text-transform: uppercase;
@@ -262,7 +262,7 @@
 
         .sla-subtitle {
             margin: 6px 0 0;
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.55;
             color: #556987;
         }
@@ -351,7 +351,7 @@
             color: #334155;
             padding: 2px 6px;
             border-radius: 10px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
         }
 
@@ -366,7 +366,7 @@
         }
 
         .sla-school-info {
-            font-size: 11px;
+            font-size: 13px;
             color: #64748b;
             display: inline-flex;
             align-items: center;
@@ -442,14 +442,14 @@
             color: #2b5d8f;
             border-radius: 6px;
             padding: 3px 8px;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
         }
 
         .sla-risk-chip {
             padding: 3px 8px;
             border-radius: 6px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -488,7 +488,7 @@
             gap: 4px;
             padding: 3px 8px;
             border-radius: 6px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.02em;
             background: #fef2f2;
@@ -507,7 +507,7 @@
             gap: 6px;
             padding: 4px 10px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
         }
 
@@ -558,7 +558,7 @@
 
         .sla-description-box p {
             margin: 0;
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.55;
             color: #334155;
             font-style: italic;
@@ -568,7 +568,7 @@
             display: flex;
             gap: 16px;
             color: #64748b;
-            font-size: 11px;
+            font-size: 13px;
             flex-wrap: wrap;
         }
 
@@ -602,7 +602,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .sla-deadline-info .deadline-label {
@@ -673,7 +673,7 @@
             align-items: center;
             gap: 8px;
             color: #475569;
-            font-size: 11px;
+            font-size: 13px;
             flex: 1;
             min-width: 240px;
         }
@@ -695,7 +695,7 @@
             color: #1675e8;
             text-decoration: none;
             font-weight: 600;
-            font-size: 11px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             gap: 4px;

@@ -4,21 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kasus - {{ $case->case_number }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #333; margin: 0; padding: 20px; background: #f3f4f6; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #333; margin: 0; padding: 20px; background: #f3f4f6; }
         .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 8px; }
         .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; }
-        .header h1 { margin: 0; font-size: 24px; text-transform: uppercase; color: #0f172a; }
+        .header h1 { margin: 0; font-size: 26px; text-transform: uppercase; color: #0f172a; }
         .header p { margin: 5px 0 0; color: #64748b; font-weight: 500; }
         .section { margin-bottom: 30px; }
-        .section h2 { font-size: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px; color: #0f172a; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .section h2 { font-size: 17px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px; color: #0f172a; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .field { margin-bottom: 10px; }
-        .field label { display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 4px; }
-        .field div { font-size: 14px; font-weight: 500; color: #1e293b; }
+        .field label { display: block; font-size: 13px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 4px; }
+        .field div { font-size: 16px; font-weight: 500; color: #1e293b; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 13px; color: #1e293b; }
-        th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 11px; color: #475569; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 15px; color: #1e293b; }
+        th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 13px; color: #475569; }
         
         @media print {
             body { padding: 0; background: #fff; }
@@ -27,10 +28,10 @@
             @page { margin: 2cm; }
         }
         
-        .print-btn { display: block; margin: 0 auto 30px; padding: 12px 24px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .print-btn { display: block; margin: 0 auto 30px; padding: 12px 24px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .print-btn:hover { background: #1d4ed8; }
         
-        .desc-box { background: #f8fafc; padding: 15px; border-left: 4px solid #94a3b8; font-size: 13px; color: #334155; white-space: pre-line; border-radius: 0 4px 4px 0; }
+        .desc-box { background: #f8fafc; padding: 15px; border-left: 4px solid #94a3b8; font-size: 15px; color: #334155; white-space: pre-line; border-radius: 0 4px 4px 0; }
     </style>
 </head>
 <body>
@@ -83,7 +84,7 @@
                     </tbody>
                 </table>
             @else
-                <p style="color: #64748b; font-style: italic; font-size: 13px;">Tidak ada pihak terkait yang dicatat.</p>
+                <p style="color: #64748b; font-style: italic; font-size: 15px;">Tidak ada pihak terkait yang dicatat.</p>
             @endif
         </div>
 
@@ -109,7 +110,7 @@
                     </tbody>
                 </table>
             @else
-                <p style="color: #64748b; font-style: italic; font-size: 13px;">Tidak ada catatan tindakan penanganan.</p>
+                <p style="color: #64748b; font-style: italic; font-size: 15px;">Tidak ada catatan tindakan penanganan.</p>
             @endif
         </div>
 
@@ -137,15 +138,15 @@
                     </tbody>
                 </table>
             @else
-                <p style="color: #64748b; font-style: italic; font-size: 13px;">Tidak ada riwayat perubahan status.</p>
+                <p style="color: #64748b; font-style: italic; font-size: 15px;">Tidak ada riwayat perubahan status.</p>
             @endif
         </div>
         
         <div class="section" style="margin-top: 60px; text-align: right;">
-            <p style="margin-bottom: 80px; font-size: 13px; color: #475569;">Dokumen resmi dicetak secara otomatis pada {{ now()->format('d F Y, H:i') }}</p>
+            <p style="margin-bottom: 80px; font-size: 15px; color: #475569;">Dokumen resmi dicetak secara otomatis pada {{ now()->format('d F Y, H:i') }}</p>
             <p style="font-weight: bold; margin: 0; color: #1e293b;">_____________________________</p>
             <p style="margin: 8px 0 0; font-weight: bold; color: #0f172a;">{{ session('user_name', 'Petugas Sahabat Sekolah') }}</p>
-            <p style="font-size: 11px; color: #64748b; margin: 0;">ID Pengguna: {{ session('user_id', '-') }}</p>
+            <p style="font-size: 13px; color: #64748b; margin: 0;">ID Pengguna: {{ session('user_id', '-') }}</p>
         </div>
     </div>
     

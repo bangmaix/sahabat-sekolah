@@ -1,0 +1,466 @@
+﻿Dokumen Rekomendasi Pengembangan SAHABAT SEKOLAH
+Oct 26, 2026 Â· @uum
+Ringkasan Eksekutif
+SAHABAT SEKOLAH sudah kuat sebagai sistem pengelolaan kasus, tetapi belum siap untuk pilot di MIN dan MTsN 1 Kota Bukittinggi. Tiga hal belum memadai: jalur lapor siswa, jalur peringatan ke penanggung jawab kasus, dan dukungan untuk madrasah. Penilaian ini berasal dari simulasi lima skenario atas PRD, Rencana Teknis MVP, dan Kesimpulan Teknis.
+Lima temuan terpenting:
+Data madrasah tidak ada di API Pemkot. Pencarian NISN, sinkronisasi sekolah, dan modul prestasi tidak berfungsi untuk kedua sekolah pilot. Ini penghambat pilot dan harus selesai lebih dulu.
+Peringatan SLA hanya lewat notifikasi dalam aplikasi dan email. WhatsApp belum bisa dipakai karena anggaran. Diperlukan web push, rekap harian, dan prosedur kontak darurat manual.
+Sistem mengasumsikan Guru BK selalu ada dan tersedia. Banyak SD/MI tidak punya Guru BK formal. Diperlukan penanggung jawab kasus yang fleksibel dan penerima cadangan.
+Jalur lapor siswa belum ramah anak. Hambatannya: pemasangan aplikasi, kategori berbahasa orang dewasa, dan token acak 12 karakter yang mudah hilang. Kanal utama sebaiknya web/PWA dengan QR per sekolah.
+Pelindungan data pribadi (UU PDP) belum dijalankan, padahal sistem memproses data anak. Diskominfo sebagai Pengendali Data perlu menyiapkan kebijakan privasi, persetujuan orang tua, retensi, dan DPIA sebelum pilot.
+Keputusan yang diminta dari Diskominfo:
+Menyetujui prioritas "sebelum pilot" pada bagian Roadmap.
+Menugaskan koordinasi dengan Kantor Kementerian Agama Kota Bukittinggi.
+Menunjuk unit atau pejabat yang bertanggung jawab atas pelindungan data pribadi.
+Menetapkan daftar kontak darurat manual untuk masa pilot.
+Dasar Penilaian dan Asumsi
+Penilaian ini hanya berdasarkan tiga dokumen, tanpa meninjau kode atau antarmuka. Beberapa temuan mungkin sudah tertangani di kode tetapi belum tertulis; temuan seperti itu ditandai "perlu diverifikasi".
+Dokumen ditinjau
+Isi yang dipakai
+PRD Final Terpadu v1.0
+Aktor, business rules, state machine, kategori, tabel domain
+MVP Technical Implementation Plan v1.0
+Arsitektur, backlog epic, roadmap 8 tahap
+Kesimpulan Teknis Proyek
+Modul terimplementasi, migrasi, endpoint API v1, perintah Artisan, pengujian
+Asumsi yang sudah dikonfirmasi:
+Aplikasi berjalan di server Diskominfo dengan database PostgreSQL.
+Diskominfo adalah Pengendali Data Pribadi; PT Kuroragi Digital Studio adalah Prosesor Data.
+WhatsApp belum dapat dipakai karena belum ada anggaran.
+Data siswa madrasah tidak tersedia di API Pemkot.
+Kategori perundungan bernuansa seksual sudah diimplementasikan sesuai PRD; Kesimpulan Teknis belum memuatnya.
+Penerapan UU PDP belum dilaksanakan.
+Asumsi yang dipakai sampai ada konfirmasi:
+MIN dan MTsN 1 belum terdaftar sebagai sekolah di aplikasi dan perlu ditambahkan sebagai master data lokal.
+Kantor Kementerian Agama Kota Bukittinggi belum memberi izin atau kesepakatan resmi untuk pilot.
+MIN belum memiliki Guru BK formal.
+Tanggal pilot belum ditetapkan, sehingga roadmap memakai urutan dan estimasi usaha (S/M/L), bukan tanggal.
+Estimasi usaha: S = kurang dari 1 minggu kerja, M = 1â€“3 minggu, L = lebih dari 3 minggu, untuk satu pengembang.
+Hasil Simulasi
+Simulasi lima skenario menemukan titik gagal di jalur masuk siswa dan jalur peringatan, bukan di logika kasus. Fitur pengelolaan kasus berjalan baik selama laporan sampai ke penanganan.
+#
+Skenario
+Titik gagal pada desain saat ini
+Perbaikan
+1
+Siswa MIN kelas 5 diejek dan ingin lapor anonim
+Perlu memasang aplikasi atau punya ponsel sendiri; kategori berbahasa dewasa; menulis kronologi berat untuk anak 9â€“11 tahun; token acak 12 karakter mudah hilang dan saluran dua arah putus; ikon atau riwayat terlihat di HP bersama
+Web/PWA dengan QR per sekolah (sekolah terisi otomatis); pilihan bergambar berbahasa anak termasuk "Aku tidak yakin"; rekam suara sebagai alternatif kronologi; token 4 kata Indonesia plus kartu bukti lapor yang bisa di-screenshot; tombol keluar cepat
+2
+Laporan risiko HIGH masuk Jumat pukul 16.00
+SLA berjalan di akhir pekan sehingga OVERDUE tanpa ada yang lalai; notifikasi hanya dalam aplikasi dan email, yang jarang dibuka; target 1 jam untuk CRITICAL tidak realistis tanpa kanal push
+SLA mengikuti kalender hari kerja dan libur sekolah (kecuali CRITICAL); web push; rekap harian; prosedur kontak darurat manual; eskalasi level 3
+3
+Tidak ada Guru BK, BK berhalangan, atau BK punya konflik kepentingan
+Seluruh alur bergantung pada satu peran; tidak ada penerima cadangan atau jalur pengalihan
+Peran "Penanggung Jawab Kasus" yang bisa diisi BK atau wali kelas; penerima cadangan; tombol "Saya tidak bisa menangani kasus ini" dengan alih tugas yang tercatat; pemodelan tim sesuai ketentuan pembentukan TPPK
+4
+Kasus CLOSED, tiga minggu kemudian perundungan kambuh
+Tidak ada pemantauan pascakasus, status buka kembali, atau penautan kasus yang menyangkut pelaku yang sama; dokumen penyelesaian bisa berupa berkas apa saja
+Tindak lanjut otomatis hari ke-7, 30, dan 90; status REOPENED; penautan dan penggabungan kasus duplikat; pengakuan Kepala Sekolah atas dokumen penyelesaian untuk kasus HIGH/CRITICAL
+5
+Pukul 23.00 laporan memuat ide bunuh diri atau kekerasan seksual
+Tidak ada respons instan kepada pelapor; tidak ada deteksi tanda bahaya; tidak ada jalur rujukan
+Deteksi kata kunci merah berbasis aturan (bukan AI) yang menaikkan risiko ke CRITICAL; layar bantuan segera dengan kontak layanan darurat dan UPTD PPA setempat (verifikasi kontak terbaru); direktori rujukan dan status kasus DIRUJUK
+Ketentuan tentang TPPK mengacu pada Permendikbudristek No. 46 Tahun 2023. Madrasah juga tunduk pada ketentuan Kementerian Agama. Nomor dan pasal perlu diverifikasi sebelum dikutip dalam dokumen resmi.
+Fitur yang Sudah Ada tetapi Kurang Efektif
+Sembilan temuan di bawah ini perlu ditangani; lima di antaranya (nomor 1, 3, 4, 6, dan 8) berstatus Tinggi karena menyangkut privasi pelapor, keamanan akun, atau kemampuan sistem memberi peringatan. Tingkat keparahan: Tinggi = menghalangi tujuan sistem atau membahayakan pengguna, Sedang = menurunkan efektivitas, Rendah = perbaikan kualitas.
+#
+Temuan
+Mengapa bermasalah
+Rekomendasi
+Tingkat
+1
+Metadata pelapor anonim dapat bocor
+Bukti foto memuat EXIF (lokasi, perangkat); log audit mencatat IP dan User-Agent; di kelas kecil gaya tulisan pun dapat dikenali
+Hapus EXIF saat unggah; jangan simpan IP/User-Agent pelapor anonim; imbau pelapor tidak menyebut detail yang mengidentifikasi
+Tinggi
+2
+SLA dapat "dimainkan"
+Respons awal cukup diklik untuk menghentikan timer, tanpa isi bermakna
+Respons awal wajib berupa pesan ke pelapor (bila ada kanal) atau tindakan dengan field terisi; ukur "waktu ke tindakan bermakna"
+Sedang
+3
+Tidak ada autentikasi dua faktor
+Akun BK, Kepala Sekolah, dan Admin memegang data anak hanya dengan email dan kata sandi
+2FA berbasis TOTP untuk ketiga peran; notifikasi login dari perangkat baru
+Tinggi
+4
+Reset kata sandi oleh Admin
+Jika Admin menetapkan kata sandi staf, Admin bisa masuk sebagai BK dan membaca identitas rahasia
+Reset hanya lewat tautan sekali pakai; wajib ganti saat login pertama; pastikan Admin tidak bisa membaca isi kasus (perlu diverifikasi)
+Tinggi
+5
+Pembatasan laju berbasis IP
+Satu Wi-Fi sekolah berbagi satu IP; saat sosialisasi puluhan siswa lapor bersamaan akan terblokir (throttle:5,1 dan throttle:10,1)
+Batas lebih longgar pada endpoint publik ditambah CAPTCHA ramah privasi (mis. Turnstile atau altcha)
+Sedang
+6
+Cron atau queue mati tidak terdeteksi
+Jika sahabat:sla-scan berhenti, sistem tampak normal padahal tidak ada pemantauan SLA
+Heartbeat: bila pemindaian tidak jalan 30 menit, kirim peringatan ke Admin; halaman status kesehatan sistem
+Tinggi
+7
+Eskalasi hanya satu tingkat
+Jika Kepala Sekolah juga tidak bertindak, tidak ada pihak berikutnya
+Eskalasi level 3 ke Admin Kota; untuk madrasah ke Kankemenag Kota Bukittinggi
+Sedang
+8
+Peringatan darurat hanya muncul saat BK login
+Mekanisme pull, bukan push
+Web push (PWA), rekap harian email, kontak darurat manual (lihat bagian pengganti WhatsApp)
+Tinggi
+9
+Pencadangan dan penyimpanan identitas
+Lokasi cadangan dan enkripsi kolom identitas serta catatan konseling tidak jelas dari dokumen
+Cadangan terenkripsi di luar server utama; uji pemulihan berkala; enkripsi tingkat aplikasi untuk reporter_identities dan case_notes (perlu diverifikasi)
+Sedang
+Rekomendasi Fitur Tambahan
+Sembilan fitur perlu selesai sebelum pilot, empat dikerjakan selama pilot, dan tiga setelahnya. Nomor di tabel ini dipakai juga di roadmap dan backlog. Usaha: S < 1 minggu, M 1â€“3 minggu, L > 3 minggu untuk satu pengembang.
+No
+Fitur
+Alasan
+Usaha
+Tahap
+1
+Master sekolah lokal untuk madrasah, impor roster siswa (CSV/Excel), input NISN manual
+Data madrasah tidak ada di API Pemkot; tanpa ini pencarian siswa kosong di kedua sekolah pilot
+M
+Sebelum pilot
+2
+Pengamanan privasi pelapor dan akun: hapus EXIF, tanpa IP/User-Agent pelapor anonim, 2FA, reset sandi lewat tautan
+Menutup kebocoran identitas dan pengambilalihan akun
+M
+Sebelum pilot
+3
+Paket kepatuhan PDP: kebijakan privasi, persetujuan orang tua, retensi, DPIA, prosedur kebocoran data
+Sistem memproses data anak dan UU PDP belum dijalankan
+M
+Sebelum pilot
+4
+Penanggung Jawab Kasus fleksibel, penerima cadangan, alih tugas tercatat
+MIN belum punya Guru BK formal; BK bisa berhalangan atau berkonflik kepentingan
+M
+Sebelum pilot
+5
+Web/PWA lapor ramah anak, QR per sekolah, pilihan bergambar, rekam suara, token 4 kata dan kartu bukti lapor, tombol keluar cepat
+Jalur masuk siswa paling menentukan pemakaian
+M
+Sebelum pilot
+6
+Web push (PWA), rekap harian email, daftar kontak darurat manual
+Pengganti WhatsApp selama anggaran belum tersedia
+M
+Sebelum pilot
+7
+SLA mengikuti kalender hari kerja dan libur sekolah, status "menunggu info pelapor", heartbeat pemantau cron/queue
+Mengurangi alert palsu dan kegagalan senyap
+M
+Sebelum pilot
+8
+Deteksi kata kunci merah berbasis aturan, layar bantuan segera, direktori rujukan, status DIRUJUK
+Keselamatan pada kasus krisis dan kekerasan seksual
+M
+Sebelum pilot
+9
+Eskalasi level 3 (Admin Kota; Kankemenag untuk madrasah)
+Menutup celah bila Kepala Sekolah tidak bertindak
+S
+Sebelum pilot
+10
+Tindak lanjut hari ke-7/30/90, status REOPENED, penautan dan penggabungan kasus
+Mengukur hasil penanganan, bukan hanya proses
+M
+Selama pilot
+11
+Field insiden terstruktur (lokasi, waktu, berulang atau tidak, jumlah pelaku) dan peringatan dini berbasis aturan
+Memberi data pada parameter "pengulangan" di Risk Engine dan menandai pola
+M
+Selama pilot
+12
+Peran pelapor Orang Tua dan Guru
+Banyak laporan nyata datang dari mereka, bukan dari siswa
+M
+Selama pilot
+13
+Rencana intervensi per peserta (korban dan pelaku), template surat panggilan dan kesepakatan
+Sistem saat ini berfokus pada korban; pelaku perlu pembinaan
+M
+Selama pilot
+14
+Survei iklim sekolah anonim per semester (sebelum dan sesudah)
+Menjaring kasus yang tidak dilaporkan; bukti efektivitas untuk pimpinan
+M
+Pasca pilot
+15
+Integritas bukti: hash berkas, audit log tahan-ubah, enkripsi kolom identitas dan catatan konseling
+Diperlukan bila kasus naik ke jalur hukum
+M
+Pasca pilot
+16
+Notifikasi WhatsApp melalui gateway resmi, satu arah tanpa isi kasus
+Dijalankan bila anggaran tersedia
+S
+Pasca pilot
+Kami merekomendasikan agar aplikasi Flutter bukan prioritas pertama. Untuk anak MIN dan MTs, web/PWA dengan QR lebih mungkin dipakai daripada aplikasi di toko aplikasi, dan tidak menambah beban rilis bagi Diskominfo. API v1 yang sudah ada tetap dipertahankan sehingga aplikasi mobile dapat menyusul.
+Pengganti WhatsApp dan Prosedur Darurat Manual
+Tanpa WhatsApp, peringatan ke staf memakai empat lapis berbiaya nol atau sangat rendah, ditambah prosedur telepon manual untuk kasus CRITICAL. Tujuannya satu: penanggung jawab kasus tahu ada laporan baru tanpa harus membuka aplikasi.
+Lapis
+Kanal
+Dipakai untuk
+Catatan
+1
+Web push (dashboard staf sebagai PWA)
+Laporan baru, SLA WARNING, SLA OVERDUE
+Di iPhone push hanya jalan bila PWA dipasang ke layar utama; staf perlu dipandu saat orientasi
+2
+Email
+Email instan untuk HIGH/CRITICAL; rekap harian pukul 07.00 berisi jumlah laporan menunggu dan kasus mendekati batas
+Email instan sudah ada; rekap harian perlu ditambah
+3
+Bot Telegram (opsional, staf yang mau)
+Pesan singkat "ada laporan baru"
+Gratis; bersifat opsional karena tidak semua staf memakai Telegram
+4
+Telepon manual
+Kasus CRITICAL dan SLA OVERDUE yang tidak direspons
+Lihat prosedur di bawah
+Aturan isi pesan untuk semua kanal: hanya "Ada laporan baru, buka SAHABAT SEKOLAH". Jangan memuat nama, kelas, kategori, atau isi laporan.
+Prosedur darurat manual selama pilot:
+Diskominfo menunjuk satu koordinator pilot yang dapat dihubungi pada jam sekolah.
+Sistem menampilkan kasus CRITICAL yang belum direspons dalam 1 jam pada halaman pemantauan koordinator.
+Koordinator menelepon penanggung jawab kasus, lalu penerima cadangan, lalu Kepala Sekolah, sesuai daftar kontak, dan mencatat hasilnya di kasus.
+Bila ketiganya tidak terjangkau, koordinator menghubungi Kankemenag (untuk madrasah) atau pihak berwenang setempat.
+Daftar kontak diisi sebelum pilot dan diperiksa ulang tiap awal semester.
+Prasyarat: kontak ini hanya berfungsi bila nomor telepon staf terisi di sistem. Nomor telepon perlu menjadi field wajib pada akun BK, Kepala Sekolah, dan penerima cadangan.
+Bila anggaran tersedia, WhatsApp sebaiknya memakai gateway resmi (WhatsApp Business Platform). Gateway tidak resmi berisiko nomor diblokir saat dibutuhkan.
+Madrasah dan Tata Kelola Pilot
+MIN dan MTsN 1 berada di bawah Kementerian Agama, sedangkan integrasi data saat ini hanya ke API Pemkot, sehingga kedua sekolah pilot perlu jalur data dan jalur izin tersendiri. Tanpa itu, pencarian siswa berdasarkan NISN, sinkronisasi sekolah, dan modul prestasi tidak berfungsi di sana.
+Solusi teknis (fitur 1 dan 9):
+Master sekolah lokal. Tabel sekolah lokal berisi NPSN, nama, jenjang, dan instansi pembina (Pemkot atau Kemenag). Daftar ini digabung dengan data dari API Pemkot, dan sahabat:sync-schools tidak boleh menimpa entri lokal.
+Sumber data siswa per sekolah. Sekolah Pemkot memakai API Pemkot. Madrasah memakai roster hasil impor CSV/Excel, dengan input NISN manual sebagai cadangan.
+Format impor minimal: NISN (10 digit, divalidasi), nama, kelas, tahun ajaran. Data lain tidak dikumpulkan, sesuai prinsip minimisasi data.
+Pembaruan roster oleh operator sekolah setiap awal semester; setiap impor tercatat di log audit.
+Eskalasi level 3 untuk madrasah diarahkan ke Kankemenag Kota Bukittinggi, bukan ke Pemkot.
+Tata kelola pilot:
+Dasar kerja sama dengan Kankemenag Kota Bukittinggi (surat izin atau nota kesepahaman) belum ada dan perlu diurus Diskominfo.
+Kepala madrasah menunjuk Penanggung Jawab Kasus dan penerima cadangan secara tertulis. Di MIN, penunjukan ini kemungkinan jatuh pada guru kelas karena tidak ada Guru BK formal.
+Ketentuan Kementerian Agama tentang pencegahan kekerasan di madrasah perlu diperiksa dan dijadikan rujukan di dokumen resmi (verifikasi nomor dan pasal).
+Checklist kesiapan pilot madrasah:
+â˜ MIN dan MTsN 1 terdaftar di master sekolah lokal
+â˜ Roster siswa kedua sekolah berhasil diimpor dan divalidasi
+â˜ Surat izin atau kesepakatan Kankemenag tersedia
+â˜ Penanggung Jawab Kasus dan penerima cadangan ditunjuk tertulis
+â˜ Nomor telepon staf terisi untuk prosedur darurat
+â˜ Staf madrasah mengikuti orientasi, termasuk pemasangan PWA
+Kepatuhan Pelindungan Data Pribadi
+Pelindungan data pribadi belum dijalankan, padahal SAHABAT SEKOLAH memproses data anak, termasuk korban, pelaku, dan saksi, sehingga ini perlu menjadi jalur kerja tersendiri sebelum pilot. Sebagai Pengendali Data, Diskominfo menentukan tujuan dan kebijakan; PT Kuroragi Digital Studio sebagai Prosesor menjalankan pemrosesan sesuai perintah Diskominfo.
+Kewajiban
+Tindakan
+Pemilik
+Tahap
+Dasar pemrosesan
+Tetapkan dasar hukum pemrosesan (lihat catatan di bawah)
+Diskominfo, dengan Bagian Hukum
+Sebelum pilot
+Pejabat/petugas PDP
+Tunjuk petugas yang bertanggung jawab atas PDP
+Diskominfo
+Sebelum pilot
+Perjanjian pemrosesan data
+Perjanjian tertulis Pengendaliâ€“Prosesor: ruang lingkup, keamanan, subprosesor, pengembalian atau penghapusan data
+Diskominfo dan KDS
+Sebelum pilot
+Kebijakan privasi dan pemberitahuan
+Teks ramah anak di halaman lapor; surat pemberitahuan umum ke orang tua melalui sekolah
+KDS menyusun, Diskominfo menyetujui
+Sebelum pilot
+Penilaian dampak (DPIA)
+Penilaian dampak pelindungan data untuk pemrosesan data anak dalam skala besar
+Diskominfo, dibantu KDS
+Sebelum pilot
+Retensi dan anonimisasi
+Tetapkan masa simpan kasus; setelah itu arsip terbatas lalu anonimisasi; tidak ada "daftar hitam" pelaku
+Diskominfo; KDS mengimplementasikan
+Sebelum pilot (kebijakan), selama pilot (otomasi)
+Prosedur kebocoran data
+Alur deteksi, penilaian, dan pemberitahuan kepada subjek data dan lembaga berwenang dalam batas waktu yang ditetapkan undang-undang
+Diskominfo; KDS mendukung teknis
+Sebelum pilot
+Hak subjek data
+Alur permintaan akses, koreksi, dan penghapusan, dengan pengecualian untuk kasus yang sedang berjalan
+Diskominfo
+Selama pilot
+Uji keamanan independen
+Uji penetrasi sebelum data nyata dimasukkan
+Diskominfo; penguji independen
+Sebelum pilot
+Catatan penting tentang persetujuan orang tua: jangan menjadikan persetujuan orang tua sebagai syarat anak boleh melapor. Itu bertentangan dengan tujuan sistem. Dasar pemrosesan yang lebih tepat adalah pelaksanaan tugas pelayanan publik dan kewajiban hukum sekolah dalam menangani kekerasan, ditambah pemberitahuan kepada orang tua melalui sekolah. Persetujuan tetap diperlukan untuk penggunaan lain, misalnya publikasi prestasi atau foto. Dasar ini perlu dikonfirmasi oleh Bagian Hukum Pemkot.
+Usulan masa simpan: akses aktif selama kasus berjalan dan satu tahun ajaran setelah ditutup, lalu arsip terbatas, lalu anonimisasi. Angka pastinya perlu ditetapkan Diskominfo bersama ketentuan kearsipan daerah.
+Rujukan pasal UU No. 27 Tahun 2022 (data anak sebagai data pribadi spesifik, penilaian dampak, kewajiban Prosesor, pemberitahuan kebocoran) dan peraturan pelaksanaannya perlu diverifikasi dalam versi terbaru sebelum dikutip.
+Konsistensi Dokumen
+Tujuh perbedaan antara PRD, Rencana Teknis MVP, dan Kesimpulan Teknis perlu diselaraskan agar Diskominfo memegang satu acuan. Dua di antaranya sudah dijelaskan: kategori seksual sudah ada di aplikasi tetapi belum tertulis di Kesimpulan Teknis, dan database yang dipakai adalah PostgreSQL.
+#
+Hal
+Perbedaan
+Tindakan
+1
+Daftar kategori
+PRD memuat enam kategori termasuk perundungan bernuansa seksual; Kesimpulan Teknis memuat delapan kategori tanpa kategori seksual dan dengan nama yang berbeda (mis. Pemerasan, Kekerasan Serius)
+Tetapkan satu daftar resmi; perbarui Kesimpulan Teknis; pastikan kategori seksual berakses terbatas (perlu diverifikasi)
+2
+Database
+PRD: PostgreSQL; Kesimpulan Teknis menyebut PostgreSQL, SQLite, atau MySQL
+PostgreSQL satu-satunya untuk produksi; SQLite hanya untuk pengujian
+3
+Pengenal sekolah
+PRD: school_id (UUID); implementasi: school_npsn
+Putuskan satu. Rekomendasi: NPSN sebagai pengenal tenant, karena stabil dan dipakai di API Pemkot; sesuaikan PRD
+4
+Antrean
+PRD dan Rencana MVP: Redis; Kesimpulan Teknis: database queue
+Database queue memadai untuk pilot; tinjau Redis bila volume naik
+5
+Tabel PRD yang tidak terlihat di migrasi
+case_status_histories, case_risk_histories, case_access_logs, notification_logs, students, parents, teachers
+Periksa apakah sudah tercakup di audit_logs. Bila belum, case_access_logs (log akses data sensitif beserta alasan akses, PRD bagian 31) perlu ada sebelum pilot
+6
+Sumber data siswa
+PRD punya tabel students; implementasi mengambil langsung dari API Pemkot dan menghapus tabel schools
+Tambahkan roster lokal untuk madrasah (fitur 1)
+7
+Endpoint kasus
+Rencana MVP: /cases/{id}/verify, /risk-assessment, /resolve, /close; implementasi: /cases/{caseNumber}/actions
+Perbarui dokumentasi API agar sesuai implementasi
+Setelah tujuh hal ini diselaraskan, tetapkan PRD versi 1.1 sebagai satu-satunya acuan dan tandai dua dokumen lainnya sebagai turunan.
+Roadmap dan Estimasi Usaha
+Roadmap terdiri dari tiga fase dan dua gerbang, dan sembilan fitur pertama harus selesai sebelum pilot dimulai. Estimasi memakai minggu kerja satu pengembang dan bersifat kasar. Tanggal belum dicantumkan karena jadwal pilot belum ditetapkan.
+roadmap Â· 3 fase, 2 gerbang
+Fase pertama memiliki empat langkah pengerjaan; fitur yang saling bergantung (misalnya 6 bergantung pada 5, dan 9 pada 4) dikerjakan berurutan, sisanya dapat paralel. Evaluasi pilot pada Gerbang 2 menentukan perluasan ke sekolah lain.
+Fase
+Fitur
+Usaha
+Estimasi kasar
+Sebelum pilot
+1â€“9
+8 M + 1 S
+9â€“25 minggu kerja; dapat dipersingkat dengan pengembang kedua; fitur 3 sebagian besar berupa dokumen dan kebijakan yang dikerjakan Diskominfo
+Selama pilot
+10â€“13
+4 M
+4â€“12 minggu kerja
+Pasca pilot
+14â€“16
+2 M + 1 S
+3â€“7 minggu kerja
+Bila waktu sempit, fitur 5 dapat dikirim lebih dulu dalam versi sederhana (form publik yang sudah ada, QR per sekolah, dan token 4 kata), lalu disempurnakan selama pilot. Fitur 1â€“4 dan 6â€“9 sebaiknya tidak dikurangi karena menyangkut data, privasi, kepatuhan, dan keselamatan.
+Ringkasan Backlog
+Backlog di bawah menurunkan 16 fitur menjadi user story dengan kriteria penerimaan singkat, sebagai bahan awal MVP Feature Backlog rinci yang disebut di Rencana Teknis MVP. Nomor mengikuti tabel fitur tambahan.
+No
+User story
+Kriteria penerimaan
+1
+Sebagai operator madrasah, saya ingin mengimpor roster siswa agar siswa bisa dicari tanpa API Pemkot
+Impor CSV/Excel; NISN 10 digit divalidasi; baris salah ditolak dengan laporan galat; impor tercatat di log audit; sahabat:sync-schools tidak menimpa sekolah lokal
+2
+Sebagai pelapor anonim, saya ingin identitas saya tidak terlacak dari berkas dan log
+EXIF dihapus saat unggah; IP dan User-Agent pelapor anonim tidak disimpan; 2FA TOTP wajib untuk BK, Kepala Sekolah, Admin; reset sandi hanya lewat tautan sekali pakai
+3
+Sebagai Pengendali Data, saya ingin dokumen dan kebijakan PDP tersedia
+Kebijakan privasi tampil di halaman lapor; DPIA, perjanjian pemrosesan data, prosedur kebocoran, dan kebijakan retensi disetujui tertulis
+4
+Sebagai kepala sekolah/madrasah, saya ingin menunjuk penanggung jawab kasus dan cadangan
+Setiap sekolah punya minimal satu penanggung jawab dan satu cadangan aktif sebelum menerima laporan; alih tugas tercatat dengan alasan; laporan diteruskan ke cadangan bila penanggung jawab tidak aktif
+5
+Sebagai siswa, saya ingin melapor dari ponsel tanpa memasang aplikasi
+QR membuka form dengan sekolah terisi; laporan selesai dalam lima langkah atau kurang; pilihan bergambar termasuk "Aku tidak yakin"; rekam suara tersedia; token 4 kata dan kartu bukti lapor dapat disimpan; tombol keluar cepat
+6
+Sebagai penanggung jawab kasus, saya ingin diberi tahu tanpa membuka aplikasi
+Push tampil dalam 1 menit di perangkat yang berlangganan; rekap email harian pukul 07.00; pesan tanpa data kasus; nomor telepon staf wajib terisi
+7
+Sebagai penanggung jawab kasus, saya tidak ingin dikenai OVERDUE di hari libur
+Kalender libur dapat diatur Admin; SLA berhenti di luar hari kerja kecuali CRITICAL; status "menunggu info" menjeda SLA; Admin diberi peringatan bila sla-scan tidak jalan selama 30 menit
+8
+Sebagai pelapor dalam krisis, saya ingin segera mendapat bantuan
+Kata kunci merah menaikkan risiko ke CRITICAL untuk ditinjau BK; layar bantuan menampilkan kontak layanan darurat dan UPTD PPA; status DIRUJUK dengan catatan rujukan; daftar kata dapat diatur Admin
+9
+Sebagai Admin Kota, saya ingin menerima eskalasi bila Kepala Sekolah tidak bertindak
+OVERDUE yang tidak ditanggapi dalam batas yang diatur memicu notifikasi ke Admin Kota; madrasah diarahkan ke kontak Kankemenag; tercatat di riwayat eskalasi
+10
+Sebagai penanggung jawab kasus, saya ingin kasus dipantau setelah ditutup
+Pengingat hari ke-7, 30, 90 dibuat saat CLOSED; jawaban "masih terjadi" membuka REOPENED; kasus dengan peserta yang sama dapat ditautkan
+11
+Sebagai penanggung jawab kasus, saya ingin tanda pola berulang
+Form memuat lokasi, waktu, berulang atau tidak, jumlah pelaku; siswa yang muncul sebagai terlapor dua kali atau lebih ditandai; tanda hanya menaikkan prioritas untuk ditinjau BK
+12
+Sebagai orang tua atau guru, saya ingin melapor atas nama siswa
+Opsi peran baru di form; mode kerahasiaan berlaku sama; laporan masuk alur yang sama
+13
+Sebagai penanggung jawab kasus, saya ingin merencanakan pemulihan korban dan pembinaan pelaku
+Rencana intervensi per peserta dengan tindak lanjut; template surat panggilan dan kesepakatan bernomor dan dapat dicetak
+14
+Sebagai pimpinan, saya ingin tahu iklim sekolah dari survei anonim
+Survei maksimal 10 pertanyaan per semester; hasil per sekolah hanya tampil bila jumlah responden mencapai ambang minimum; perbandingan sebelum dan sesudah
+15
+Sebagai Pengendali Data, saya ingin bukti dan log tahan-ubah
+Hash SHA-256 saat unggah, diverifikasi saat unduh; log audit tertaut rantai hash; identitas dan catatan konseling terenkripsi
+16
+Sebagai penanggung jawab kasus, saya ingin notifikasi WhatsApp
+Pesan satu arah tanpa isi kasus lewat gateway resmi; staf harus opt-in
+Indikator Keberhasilan Pilot dan Risiko
+Indikator keberhasilan MVP di PRD berfokus pada proses; pilot juga perlu mengukur hasil, yaitu apakah perundungan berkurang dan korban merasa tertangani. Target angka sebaiknya ditetapkan Diskominfo setelah satu semester data dasar, kecuali target SLA yang sudah ada di PRD.
+Indikator
+Definisi
+Arah yang diharapkan
+Waktu ke tindakan bermakna
+Median waktu dari laporan masuk sampai respons berisi pesan atau tindakan dengan field terisi
+Sesuai SLA: maksimal 24 jam, CRITICAL maksimal 1 jam
+Penyebab OVERDUE
+Proporsi OVERDUE karena kelalaian dibanding karena libur atau kontak tak terjangkau
+Kelalaian menurun; OVERDUE akibat libur mendekati nol setelah fitur 7
+Laporan per 100 siswa per semester
+Jumlah laporan dibagi jumlah siswa aktif
+Kenaikan di awal wajar dan menandakan kepercayaan; tinjau bersama survei iklim
+Bauran mode identitas
+Persentase laporan terbuka, rahasia, dan anonim
+Dipantau; tidak ada target
+Tingkat kambuh
+Persentase kasus yang REOPENED dalam 90 hari
+Menurun
+Kelengkapan penutupan
+Persentase kasus HIGH/CRITICAL dengan dokumen penyelesaian dan pengakuan Kepala Sekolah
+100%
+Kepuasan pelapor
+Pertanyaan satu ketukan saat kasus ditutup: "Apakah masalahmu tertangani?"
+Meningkat
+Skor iklim sekolah
+Survei anonim sebelum dan sesudah pilot; survei dasar dan akhir dilakukan manual lewat formulir terpisah, versi dalam aplikasi menyusul sebagai fitur 14
+Membaik
+Kesiapan operasional
+Persentase staf dengan nomor telepon terisi dan push aktif; roster siswa terbarui
+100% sebelum pilot dimulai
+Risiko utama dan mitigasinya:
+Risiko
+Dampak
+Mitigasi
+Izin Kankemenag tertunda
+Pilot madrasah mundur
+Mulai koordinasi sekarang; sambil menunggu, uji sistem dengan data contoh
+Staf tidak melihat push atau email
+SLA gagal tanpa disadari
+Orientasi pemasangan PWA; prosedur telepon manual; rekap harian
+Siswa tidak percaya dan tidak melapor
+Data kosong; sistem tampak tidak dipakai
+Sosialisasi dengan QR di kelas; jaminan anonimitas yang dapat dijelaskan; survei iklim
+Kebocoran identitas pelapor
+Kerugian bagi anak; hilangnya kepercayaan
+2FA, hapus EXIF, tanpa IP anonim, log akses sensitif, uji penetrasi
+Beban koordinator manual
+Prosedur darurat tidak berjalan
+Batasi pilot pada dua sekolah; evaluasi beban setelah satu bulan; siapkan WhatsApp resmi bila anggaran ada
+Laporan iseng atau palsu
+Beban kerja BK
+Pembatasan laju plus CAPTCHA; verifikasi oleh BK; hasil "tidak terbukti" tidak menimbulkan sanksi bagi pelapor anonim
+Fitur sebelum pilot tidak selesai
+Pilot dimulai tanpa pengaman
+Fitur 1â€“9 menjadi syarat mulai pilot (gerbang di roadmap)

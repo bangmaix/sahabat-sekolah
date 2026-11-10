@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk | Sahabat Sekolah</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -26,13 +27,18 @@
             <div class="login-emblem"><i data-lucide="heart-handshake"></i></div>
             <span class="eyebrow">RUANG KERJA TERLINDUNGI</span>
             <h1>Selamat Datang<br><b>Guru BK</b></h1>
-            <p class="login-lead">Masuk untuk mengakses dashboard<br>dan mengelola penanganan perundungan di sekolah.</p>
+            @if (session('success'))
+                <div style="display:flex; gap:9px; align-items:flex-start; color:#187349; background:#e8f9f0; border:1px solid #c2eed5; border-radius:8px; padding:12px 14px; font-size:13px; line-height:1.5; margin-bottom:18px; text-align:left;">
+                    <i data-lucide="circle-check-big" style="width:18px; flex:none; color:#187349; margin-top:1px;"></i>
+                    <span>{{ session('success') }}</span>
+                </div>
+            @endif
             @if (session('error'))<div class="login-error"><i data-lucide="circle-alert"></i>{{ session('error') }}</div>@endif
             <form method="POST" action="{{ route('login.store') }}" class="reference-login-form">
                 @csrf
                 <label><i data-lucide="user-round"></i><input type="email" name="email" value="{{ old('email') }}" placeholder="NIS / Email / Username" required></label>
                 <label><i data-lucide="lock-keyhole"></i><input type="password" id="password" name="password" placeholder="Password" required><span class="field-action" id="togglePassword" style="cursor: pointer; z-index: 10;"><i data-lucide="eye" id="eyeIcon"></i><i data-lucide="eye-off" id="eyeOffIcon" style="display: none;"></i></span></label>
-                <div class="login-options"><label class="remember"><input type="checkbox" name="remember"> <span>Ingat saya</span></label><a href="{{ route('reports.create') }}">Lupa password?</a></div>
+                <div class="login-options"><label class="remember"><input type="checkbox" name="remember"> <span>Ingat saya</span></label><a href="{{ route('password.request') }}">Lupa password?</a></div>
                 <button class="reference-submit" type="submit">Masuk</button>
             </form>
             <div class="login-divider"><span>atau</span></div>

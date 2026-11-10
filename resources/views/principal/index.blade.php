@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <section class="principal-stat-grid">
+    <section class="principal-stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
         <div class="principal-stat">
             <span class="principal-stat-icon blue-bg"><i data-lucide="files"></i></span>
             <div>
@@ -48,6 +48,14 @@
                 <p>Eskalasi otomatis</p>
             </div>
         </div>
+        <a href="{{ route('achievements.index') }}" class="principal-stat" style="text-decoration:none;" title="Lihat Capaian Prestasi Siswa">
+            <span class="principal-stat-icon" style="background:#fef3c7;color:#b45309;"><i data-lucide="trophy"></i></span>
+            <div>
+                <small>Prestasi Siswa</small>
+                <strong style="color:#b45309;">{{ $achievementStats['total'] }}</strong>
+                <p>{{ $achievementStats['students'] }} siswa berprestasi</p>
+            </div>
+        </a>
     </section>
 
     <section class="principal-grid">
@@ -118,5 +126,83 @@
                 <span>Akses sensitif tercatat dalam audit log</span>
             </div>
         </aside>
+    </section>
+
+    {{-- ======================== PRESTASI SISWA MONITORING ======================== --}}
+    <section class="panel" style="margin-top: 20px;">
+        <div class="panel-heading" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:14px;border-bottom:1px solid #edf2f6;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:10px;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i data-lucide="trophy" style="width:20px;height:20px;"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0;font-size:18px;font-weight:700;color:#183b68;">Prestasi & Kebanggaan Siswa</h3>
+                    <p style="margin:2px 0 0;font-size:13px;color:#73869e;">Data capaian prestasi siswa pada {{ $selectedSchool?->nama_sekolah ?? 'sekolah Anda' }}</p>
+                </div>
+            </div>
+            <a class="view-button" href="{{ route('achievements.index') }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:14px;text-decoration:none;">
+                Lihat Seluruh Prestasi ({{ $achievementStats['total'] }}) <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+            </a>
+        </div>
+
+        @if ($recentAchievements->isNotEmpty())
+            <div class="principal-table-wrap" style="margin-top:10px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Siswa</th>
+                            <th>Capaian Prestasi</th>
+                            <th>Kategori</th>
+                            <th>Tingkat</th>
+                            <th>Tanggal Perolehan</th>
+                            <th>Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($recentAchievements as $ach)
+                            @php
+                                $badgeStyles = match ($ach->achievement_level) {
+                                    'INTERNASIONAL' => 'background:#f3e8ff;color:#7e22ce;border:1px solid #d8b4fe;',
+                                    'NASIONAL' => 'background:#ffe4e6;color:#be123c;border:1px solid #fecdd3;',
+                                    'PROVINSI' => 'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;',
+                                    'KOTA' => 'background:#fef3c7;color:#b45309;border:1px solid #fde68a;',
+                                    default => 'background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;',
+                                };
+                            @endphp
+                            <tr>
+                                <td>
+                                    <strong>{{ $ach->student_name }}</strong>
+                                    <small>Kelas {{ $ach->class_name ?? '-' }} &bull; NISN: {{ $ach->nisn }}</small>
+                                </td>
+                                <td>
+                                    <strong style="color:#1675e8;">{{ $ach->ranking }}</strong>
+                                    <small>{{ $ach->achievement_name }}</small>
+                                </td>
+                                <td>{{ $ach->category?->name ?? 'Prestasi' }}</td>
+                                <td>
+                                    <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em;{{ $badgeStyles }}">
+                                        {{ $ach->achievement_level }}
+                                    </span>
+                                </td>
+                                <td>{{ \Illuminate\Support\Carbon::parse($ach->achievement_date)->format('d M Y') }}</td>
+                                <td>
+                                    <a class="view-button" href="{{ route('achievements.student', $ach->nisn) }}">
+                                        Portofolio <i data-lucide="arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div style="text-align:center;padding:32px 20px;color:#8093a6;">
+                <div style="width:42px;height:42px;border-radius:10px;background:#fef3c7;color:#b45309;display:grid;place-items:center;margin:0 auto 10px;">
+                    <i data-lucide="trophy" style="width:20px;height:20px;"></i>
+                </div>
+                <strong style="display:block;color:#204b77;font-size:15px;margin-bottom:3px;">Belum ada prestasi yang tercatat</strong>
+                <p style="font-size:13px;color:#8093a6;margin:0;">Data prestasi yang diinputkan oleh Guru BK akan otomatis terpantau di halaman ini.</p>
+            </div>
+        @endif
     </section>
 @endsection
